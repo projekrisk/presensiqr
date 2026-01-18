@@ -100,7 +100,7 @@ class SekolahResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('logo')
-                    ->disk('public/uploads') // Wajib set disk di sini juga agar gambar tampil
+                    ->disk('uploads') // Wajib set disk di sini juga agar gambar tampil
                     ->circular(),
                 TextColumn::make('npsn')
                     ->searchable()
