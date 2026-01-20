@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Traits\HasSekolah;
 
 class Siswa extends Model
 {
     use HasFactory;
+    use HasSekolah;
 
     protected $table = 'siswa';
     protected $guarded = [];
@@ -26,11 +28,6 @@ class Siswa extends Model
             $dataMentah = $siswa->nisn . '_' . $siswa->nama_lengkap . '_' . env('APP_KEY');
             $siswa->qr_code_data = hash('sha256', $dataMentah);
         });
-    }
-
-    public function sekolah(): BelongsTo
-    {
-        return $this->belongsTo(Sekolah::class);
     }
 
     public function kelas(): BelongsTo

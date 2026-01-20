@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Traits\HasSekolah;
 
 class AbsensiHarian extends Model
 {
     use HasFactory;
+    use HasSekolah;
 
     protected $table = 'absensi_harian';
     protected $guarded = [];
