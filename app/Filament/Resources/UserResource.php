@@ -25,19 +25,23 @@ class UserResource extends Resource
     
     protected static ?int $navigationSort = 9;
 
-    // --- FITUR FILTER MANUAL (PENTING UNTUK USER) ---
-    // Karena User tidak pakai Global Scope (HasSekolah) agar tidak Infinite Loop,
-    // kita harus memfilternya di sini.
+    // --- BAGIAN KUNCI: FILTER QUERY MANUAL ---
+    // Tambahkan method ini agar Admin Sekolah A cuma lihat Guru Sekolah A
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
 
-        if (auth()->check() && auth()->user()->sekolah_id) {
-            $query->where('sekolah_id', auth()->user()->sekolah_id);
+        if (auth()->check()) {
+            $user = auth()->user();
+            // Jika user bukan Super Admin (punya sekolah_id)
+            if ($user->sekolah_id) {
+                $query->where('sekolah_id', $user->sekolah_id);
+            }
         }
 
         return $query;
     }
+    // ------------------------------------------
 
     public static function form(Form $form): Form
     {
@@ -49,7 +53,10 @@ class UserResource extends Resource
                     ->preload()
                     ->required()
                     ->label('Sekolah')
-                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                    // Sembunyikan & Disable jika bukan Super Admin
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null)
+                    ->disabled(fn () => auth()->check() && auth()->user()->sekolah_id !== null)
+                    ->default(fn () => auth()->user()->sekolah_id),
                 
                 TextInput::make('name')
                     ->required()
