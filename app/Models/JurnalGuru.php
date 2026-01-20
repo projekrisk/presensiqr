@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class JurnalGuru extends Model
 {
@@ -14,6 +15,16 @@ class JurnalGuru extends Model
 
     protected $table = 'jurnal_guru';
     protected $guarded = [];
+
+    protected static function booted()
+    {
+        // Otomatis isi user_id dengan ID Guru yang login
+        static::creating(function ($model) {
+            if (Auth::check()) {
+                $model->user_id = Auth::id();
+            }
+        });
+    }
 
     public function user(): BelongsTo 
     { 

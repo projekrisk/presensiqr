@@ -23,8 +23,8 @@ class AbsensiHarianResource extends Resource
     protected static ?string $model = AbsensiHarian::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
-    protected static ?string $navigationLabel = 'Laporan Kehadiran';
-    protected static ?string $slug = 'laporan-kehadiran';
+    protected static ?string $navigationLabel = 'Absensi Gerbang (Kiosk)';
+    protected static ?string $slug = 'absensi-harian';
     protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
@@ -75,6 +75,11 @@ class AbsensiHarianResource extends Resource
                     default => 'gray',
                 }),
                 TextColumn::make('sumber')->label('Via'),
+                // Sembunyikan kolom sekolah di tabel jika user adalah Admin Sekolah
+                TextColumn::make('sekolah.nama_sekolah')
+                    ->label('Sekolah')
+                    ->sortable()
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
