@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-
-// Import Komponen
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TimePicker;
@@ -35,9 +33,7 @@ class AbsensiHarianResource extends Resource
             ->schema([
                 Select::make('siswa_id')
                     ->relationship('siswa', 'nama_lengkap')
-                    // Kustomisasi Tampilan Label Pilihan (Nama - NISN - Kelas)
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->nama_lengkap} ({$record->nisn}) - {$record->kelas->nama_kelas}")
-                    // Bisa dicari berdasarkan Nama atau NISN
                     ->searchable(['nama_lengkap', 'nisn'])
                     ->required(),
                 DatePicker::make('tanggal')
@@ -53,6 +49,12 @@ class AbsensiHarianResource extends Resource
                         'Alpha' => 'Alpha',
                     ]),
                 TextInput::make('keterangan'),
+                
+                // Input Sekolah ID (Disembunyikan jika Admin Sekolah)
+                Select::make('sekolah_id')
+                    ->relationship('sekolah', 'nama_sekolah')
+                    ->required()
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
             ]);
     }
 
@@ -60,39 +62,26 @@ class AbsensiHarianResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('tanggal')
-                    ->date('d M Y')
-                    ->sortable(),
-                TextColumn::make('siswa.nama_lengkap')
-                    ->searchable()
-                    ->weight('bold')
-                    ->label('Nama Siswa'),
-                TextColumn::make('siswa.kelas.nama_kelas')
-                    ->label('Kelas')
-                    ->sortable(),
-                TextColumn::make('jam_masuk')
-                    ->time('H:i')
-                    ->placeholder('-'),
-                TextColumn::make('status')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'Hadir' => 'success',
-                        'Telat' => 'warning',
-                        'Alpha' => 'danger',
-                        'Sakit' => 'info',
-                        'Izin' => 'info',
-                    }),
-                TextColumn::make('sumber')
-                    ->label('Via'),
+                TextColumn::make('tanggal')->date('d M Y')->sortable(),
+                TextColumn::make('siswa.nama_lengkap')->searchable()->weight('bold')->label('Nama Siswa'),
+                TextColumn::make('siswa.kelas.nama_kelas')->label('Kelas')->sortable(),
+                TextColumn::make('jam_masuk')->time('H:i')->placeholder('-'),
+                TextColumn::make('status')->badge()->color(fn (string $state): string => match ($state) {
+                    'Hadir' => 'success',
+                    'Telat' => 'warning',
+                    'Alpha' => 'danger',
+                    'Sakit' => 'info',
+                    'Izin' => 'info',
+                    default => 'gray',
+                }),
+                TextColumn::make('sumber')->label('Via'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                // Filter Tanggal Hari Ini Default
                 Filter::make('hari_ini')
                     ->query(fn (Builder $query): Builder => $query->whereDate('tanggal', now()))
                     ->label('Hari Ini')
                     ->default(),
-
                 SelectFilter::make('status')
                     ->options([
                         'Hadir' => 'Hadir',

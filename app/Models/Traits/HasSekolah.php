@@ -16,7 +16,7 @@ trait HasSekolah
 
         // Otomatis isi sekolah_id saat Create Data Baru
         static::creating(function ($model) {
-            if (Auth::check() && Auth::user()->sekolah_id) {
+            if (Auth::hasUser() && Auth::user()->sekolah_id) {
                 $model->sekolah_id = Auth::user()->sekolah_id;
             }
         });

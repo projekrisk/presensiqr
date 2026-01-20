@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Builder; // Import Builder
 
 class UserResource extends Resource
 {
@@ -20,10 +21,23 @@ class UserResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
     
-    // Label menu diatur di sini
     protected static ?string $navigationLabel = 'Data Guru & Staf';
     
     protected static ?int $navigationSort = 9;
+
+    // --- FITUR FILTER MANUAL (PENTING UNTUK USER) ---
+    // Karena User tidak pakai Global Scope (HasSekolah) agar tidak Infinite Loop,
+    // kita harus memfilternya di sini.
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (auth()->check() && auth()->user()->sekolah_id) {
+            $query->where('sekolah_id', auth()->user()->sekolah_id);
+        }
+
+        return $query;
+    }
 
     public static function form(Form $form): Form
     {
@@ -33,10 +47,9 @@ class UserResource extends Resource
                     ->relationship('sekolah', 'nama_sekolah')
                     ->searchable()
                     ->preload()
-                    ->label('Users')
                     ->required()
-                    ->hidden(fn () => auth()->user()->sekolah_id !== null)
-                    ->label('Sekolah'),
+                    ->label('Sekolah')
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
                 
                 TextInput::make('name')
                     ->required()
@@ -49,11 +62,8 @@ class UserResource extends Resource
                 
                 TextInput::make('password')
                     ->password()
-                    // Hanya wajib saat create (user baru)
                     ->required(fn (string $operation): bool => $operation === 'create')
-                    // Hash password sebelum simpan agar aman
                     ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                    // Jangan update password jika form kosong saat edit
                     ->dehydrated(fn ($state) => filled($state)),
                 
                 Select::make('peran')
@@ -70,25 +80,19 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')
-                    ->searchable()
-                    ->weight('bold'),
-                TextColumn::make('email')
-                    ->searchable(),
+                TextColumn::make('name')->searchable()->weight('bold'),
+                TextColumn::make('email')->searchable(),
                 TextColumn::make('sekolah.nama_sekolah')
                     ->label('Sekolah')
-                    ->sortable(),
-                TextColumn::make('peran')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'guru' => 'info',
-                        'admin_sekolah' => 'warning',
-                        default => 'gray',
-                    }),
+                    ->sortable()
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                TextColumn::make('peran')->badge()->color(fn (string $state): string => match ($state) {
+                    'guru' => 'info',
+                    'admin_sekolah' => 'warning',
+                    default => 'gray',
+                }),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -102,9 +106,7 @@ class UserResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

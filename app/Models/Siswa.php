@@ -15,11 +15,10 @@ class Siswa extends Model
     protected $table = 'siswa';
     protected $guarded = [];
 
-    // Logika QR Code (Dari Tahap 3)
+    // Logika QR Code
     protected static function booted()
     {
         static::saving(function ($siswa) {
-            // Generate QR jika NISN/Nama berubah
             if ($siswa->isDirty('nisn') || $siswa->isDirty('nama_lengkap')) {
                  $dataMentah = $siswa->nisn . '_' . $siswa->nama_lengkap . '_' . env('APP_KEY');
                  $siswa->qr_code_data = hash('sha256', $dataMentah);

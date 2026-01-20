@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-
-// Import Komponen Form & Table
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
@@ -20,12 +18,8 @@ class KelasResource extends Resource
     protected static ?string $model = Kelas::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
     protected static ?string $navigationLabel = 'Data Kelas';
-
-    // Agar URL jadi /admin/kelas (bukan kelases)
     protected static ?string $slug = 'kelas';
-
     protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
@@ -37,8 +31,10 @@ class KelasResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->hidden(fn () => auth()->user()->sekolah_id !== null)
-                    ->label('Sekolah'),
+                    ->label('Sekolah')
+                    // Sembunyikan jika user adalah Admin Sekolah
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                    
                 TextInput::make('nama_kelas')
                     ->required()
                     ->placeholder('Contoh: X RPL 1')
@@ -60,18 +56,15 @@ class KelasResource extends Resource
                 TextColumn::make('sekolah.nama_sekolah')
                     ->searchable()
                     ->sortable()
-                    ->label('Sekolah'),
-                TextColumn::make('nama_kelas')
-                    ->searchable()
-                    ->weight('bold'),
-                TextColumn::make('jurusan')
-                    ->searchable(),
-                TextColumn::make('tingkat')
-                    ->sortable(),
+                    ->label('Sekolah')
+                    // Sembunyikan kolom sekolah di tabel jika user adalah Admin Sekolah
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                    
+                TextColumn::make('nama_kelas')->searchable()->weight('bold'),
+                TextColumn::make('jurusan')->searchable(),
+                TextColumn::make('tingkat')->sortable(),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
@@ -84,9 +77,7 @@ class KelasResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

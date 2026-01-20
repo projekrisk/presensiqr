@@ -2,19 +2,19 @@
 
 namespace App\Models;
 
-// Import Trait Multi-tenant
-use App\Models\Traits\HasSekolah;
-// Import Sanctum (API)
-use Laravel\Sanctum\HasApiTokens;
+// PENTING: JANGAN IMPORT HasSekolah DI SINI!
+// Menggunakan Global Scope pada User model memicu Infinite Loop saat Auth login.
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class User extends Authenticatable
 {
-    // Pasang Trait HasSekolah & HasApiTokens bersamaan
-    use HasApiTokens, HasFactory, Notifiable, HasSekolah;
+    use HasApiTokens, HasFactory, Notifiable;
 
     protected $guarded = [];
 
@@ -28,7 +28,20 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    // Method relasi sekolah() TIDAK PERLU ditulis lagi 
-    // karena sudah otomatis ada di dalam Trait HasSekolah.
-    // Jika ada, hapus agar tidak error "Method sekolah already exists".
+    // Logika Auto-Fill Sekolah ID (Manual tanpa Trait)
+    // Ini aman karena hanya jalan saat "creating", bukan saat "retrieving" (login)
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (Auth::hasUser() && Auth::user()->sekolah_id) {
+                $model->sekolah_id = Auth::user()->sekolah_id;
+            }
+        });
+    }
+
+    // Relasi Manual (Karena tidak pakai Trait)
+    public function sekolah(): BelongsTo
+    {
+        return $this->belongsTo(Sekolah::class, 'sekolah_id');
+    }
 }

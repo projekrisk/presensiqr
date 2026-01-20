@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-
-// Import Komponen
 use Filament\Forms\Components\Card;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
@@ -38,24 +36,21 @@ class PerangkatResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->hidden(fn () => auth()->user()->sekolah_id !== null)
-                            ->label('Milik Sekolah'),
-
+                            ->label('Milik Sekolah')
+                            ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                        
                         TextInput::make('nama_device')
                             ->required()
                             ->placeholder('Contoh: Tablet Pos Satpam')
                             ->label('Nama Perangkat'),
-
+                            
                         TextInput::make('device_id_hash')
                             ->label('Device ID (Salin dari HP)')
                             ->required()
                             ->unique(ignoreRecord: true)
-                            // --- TAMBAHKAN BARIS INI ---
-                            // Agar saat admin paste ID asli, sistem otomatis mengubahnya jadi Hash sebelum simpan
-                            ->dehydrateStateUsing(fn ($state) => hash('sha256', $state)) 
-                            // ---------------------------
+                            ->dehydrateStateUsing(fn ($state) => hash('sha256', $state)) // Hashing otomatis
                             ->helperText('Paste ID yang muncul di layar HP. Sistem akan otomatis mengenkripsinya.'),
-
+                            
                         Toggle::make('status_aktif')
                             ->label('Status Aktif')
                             ->default(true)
@@ -72,23 +67,19 @@ class PerangkatResource extends Resource
                 TextColumn::make('sekolah.nama_sekolah')
                     ->searchable()
                     ->sortable()
-                    ->label('Sekolah'),
-
-                TextColumn::make('nama_device')
-                    ->searchable()
-                    ->weight('bold'),
-
+                    ->label('Sekolah')
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                    
+                TextColumn::make('nama_device')->searchable()->weight('bold'),
+                
                 TextColumn::make('device_id_hash')
-                    ->limit(20) // Potong tampilan agar tidak terlalu panjang
-                    ->copyable() // Bisa dicopy admin
+                    ->limit(20)
+                    ->copyable()
                     ->tooltip('Klik untuk menyalin Hash ID'),
-
-                ToggleColumn::make('status_aktif')
-                    ->label('Aktif'),
+                    
+                ToggleColumn::make('status_aktif')->label('Aktif'),
             ])
-            ->filters([
-                //
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -102,9 +93,7 @@ class PerangkatResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
