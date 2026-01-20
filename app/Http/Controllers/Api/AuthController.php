@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // 1. LOGIN GURU (Email & Password)
     public function loginGuru(Request $request)
     {
         $request->validate([
@@ -18,52 +17,50 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Load user beserta data sekolahnya untuk ambil logo
+        $user = User::with('sekolah')->where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Login Gagal'], 401);
+            return response()->json(['success' => false, 'message' => 'Login Gagal'], 401);
         }
 
-        // Cek apakah user ini Guru?
-        // Hapus Token lama (opsional, agar single device)
         $user->tokens()->delete();
-
-        // Buat Token Baru
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'message' => 'Login Berhasil',
             'token' => $token,
             'role' => 'guru',
-            'user' => $user
+            'user' => $user,
+            'logo' => $user->sekolah ? $user->sekolah->logo : null, // Kirim Logo
         ]);
     }
 
-    // 2. LOGIN KIOSK (Device ID Binding)
     public function loginKiosk(Request $request)
     {
-        $request->validate([
-            'device_id' => 'required', // ID Asli dari Android
-        ]);
+        $request->validate(['device_id' => 'required']);
 
-        // Hash ID yang dikirim Android dengan SHA256 (sama seperti di DB)
-        // Bisa tambah SALT jika mau lebih aman: hash('sha256', $request->device_id . 'RAHASIA');
         $hashedId = hash('sha256', $request->device_id);
 
-        // Cari di database
-        $perangkat = Perangkat::where('device_id_hash', $hashedId)->first();
+        // Load Perangkat beserta data Sekolah
+        $perangkat = Perangkat::with('sekolah')->where('device_id_hash', $hashedId)->first();
 
         if (! $perangkat || ! $perangkat->status_aktif) {
-            return response()->json(['message' => 'Perangkat Tidak Terdaftar / Belum Aktif'], 403);
+            return response()->json(['success' => false, 'message' => 'Perangkat Tidak Terdaftar / Belum Aktif'], 403);
         }
 
-        // Karena Perangkat tidak punya tabel User sendiri, kita bisa return data sekolahnya
         return response()->json([
+            'success' => true,
             'message' => 'Perangkat Terverifikasi',
-            'sekolah_id' => $perangkat->sekolah_id,
-            'nama_device' => $perangkat->nama_device,
-            // Kita tidak pakai Token Sanctum untuk Kiosk di tahap ini agar simpel,
-            // Kiosk cukup kirim device_id_hash di setiap request sync.
+            'token' => 'KIOSK_TOKEN', // Token dummy
+            // Buat struktur user dummy agar compatible dengan model Android
+            'user' => [
+                'name' => $perangkat->nama_device,
+                'email' => 'kiosk@device',
+                'sekolah_id' => $perangkat->sekolah_id
+            ],
+            'logo' => $perangkat->sekolah ? $perangkat->sekolah->logo : null, // Kirim Logo
         ]);
     }
 }
