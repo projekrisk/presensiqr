@@ -17,7 +17,6 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Load user beserta data sekolahnya untuk ambil logo
         $user = User::with('sekolah')->where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
@@ -33,7 +32,9 @@ class AuthController extends Controller
             'token' => $token,
             'role' => 'guru',
             'user' => $user,
-            'logo' => $user->sekolah ? $user->sekolah->logo : null, // Kirim Logo
+            'logo' => $user->sekolah ? $user->sekolah->logo : null,
+            // TAMBAHAN: Kirim Nama Sekolah
+            'school_name' => $user->sekolah ? $user->sekolah->nama_sekolah : 'Sekolah Tidak Diketahui', 
         ]);
     }
 
@@ -43,7 +44,6 @@ class AuthController extends Controller
 
         $hashedId = hash('sha256', $request->device_id);
 
-        // Load Perangkat beserta data Sekolah
         $perangkat = Perangkat::with('sekolah')->where('device_id_hash', $hashedId)->first();
 
         if (! $perangkat || ! $perangkat->status_aktif) {
@@ -53,14 +53,15 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Perangkat Terverifikasi',
-            'token' => 'KIOSK_TOKEN', // Token dummy
-            // Buat struktur user dummy agar compatible dengan model Android
+            'token' => 'KIOSK_TOKEN',
             'user' => [
                 'name' => $perangkat->nama_device,
                 'email' => 'kiosk@device',
                 'sekolah_id' => $perangkat->sekolah_id
             ],
-            'logo' => $perangkat->sekolah ? $perangkat->sekolah->logo : null, // Kirim Logo
+            'logo' => $perangkat->sekolah ? $perangkat->sekolah->logo : null,
+            // TAMBAHAN: Kirim Nama Sekolah
+            'school_name' => $perangkat->sekolah ? $perangkat->sekolah->nama_sekolah : 'Sekolah',
         ]);
     }
 }
