@@ -17,6 +17,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Load user beserta data sekolahnya untuk ambil logo
         $user = User::with('sekolah')->where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
@@ -33,8 +34,10 @@ class AuthController extends Controller
             'role' => 'guru',
             'user' => $user,
             'logo' => $user->sekolah ? $user->sekolah->logo : null,
-            // TAMBAHAN: Kirim Nama Sekolah
-            'school_name' => $user->sekolah ? $user->sekolah->nama_sekolah : 'Sekolah Tidak Diketahui', 
+            'school_name' => $user->sekolah ? $user->sekolah->nama_sekolah : 'Sekolah Tidak Diketahui',
+            
+            // TAMBAHAN: Kirim URL Foto Guru
+            'user_photo' => $user->foto, 
         ]);
     }
 
@@ -60,8 +63,8 @@ class AuthController extends Controller
                 'sekolah_id' => $perangkat->sekolah_id
             ],
             'logo' => $perangkat->sekolah ? $perangkat->sekolah->logo : null,
-            // TAMBAHAN: Kirim Nama Sekolah
             'school_name' => $perangkat->sekolah ? $perangkat->sekolah->nama_sekolah : 'Sekolah',
+            'user_photo' => null, // Kiosk tidak punya foto profil user
         ]);
     }
 }

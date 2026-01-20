@@ -12,8 +12,10 @@ use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\FileUpload; // Import FileUpload
 use Filament\Tables\Columns\TextColumn;
-use Illuminate\Database\Eloquent\Builder; // Import Builder
+use Filament\Tables\Columns\ImageColumn; // Import ImageColumn
+use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
@@ -25,23 +27,16 @@ class UserResource extends Resource
     
     protected static ?int $navigationSort = 9;
 
-    // --- BAGIAN KUNCI: FILTER QUERY MANUAL ---
-    // Tambahkan method ini agar Admin Sekolah A cuma lihat Guru Sekolah A
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
 
-        if (auth()->check()) {
-            $user = auth()->user();
-            // Jika user bukan Super Admin (punya sekolah_id)
-            if ($user->sekolah_id) {
-                $query->where('sekolah_id', $user->sekolah_id);
-            }
+        if (auth()->check() && auth()->user()->sekolah_id) {
+            $query->where('sekolah_id', auth()->user()->sekolah_id);
         }
 
         return $query;
     }
-    // ------------------------------------------
 
     public static function form(Form $form): Form
     {
@@ -53,11 +48,19 @@ class UserResource extends Resource
                     ->preload()
                     ->required()
                     ->label('Sekolah')
-                    // Sembunyikan & Disable jika bukan Super Admin
-                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null)
-                    ->disabled(fn () => auth()->check() && auth()->user()->sekolah_id !== null)
-                    ->default(fn () => auth()->user()->sekolah_id),
+                    ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
                 
+                // TAMBAHAN: Upload Foto Profil
+                FileUpload::make('foto')
+                    ->avatar()
+                    ->disk('uploads')
+                    ->directory('user-photos')
+                    ->image()
+                    ->imageEditor()
+                    ->label('Foto Profil')
+                    ->columnSpanFull()
+                    ->alignCenter(),
+
                 TextInput::make('name')
                     ->required()
                     ->label('Nama Guru'),
@@ -87,6 +90,12 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                // TAMBAHAN: Kolom Foto
+                ImageColumn::make('foto')
+                    ->disk('uploads')
+                    ->circular()
+                    ->label('Foto'),
+
                 TextColumn::make('name')->searchable()->weight('bold'),
                 TextColumn::make('email')->searchable(),
                 TextColumn::make('sekolah.nama_sekolah')
