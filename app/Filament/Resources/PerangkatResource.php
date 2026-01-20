@@ -46,10 +46,14 @@ class PerangkatResource extends Resource
                             ->label('Nama Perangkat'),
 
                         TextInput::make('device_id_hash')
+                            ->label('Device ID (Salin dari HP)')
                             ->required()
                             ->unique(ignoreRecord: true)
-                            ->label('Device ID (SHA256 Hash)')
-                            ->helperText('Masukkan hasil hash SHA256 dari Android ID perangkat.'),
+                            // --- TAMBAHKAN BARIS INI ---
+                            // Agar saat admin paste ID asli, sistem otomatis mengubahnya jadi Hash sebelum simpan
+                            ->dehydrateStateUsing(fn ($state) => hash('sha256', $state)) 
+                            // ---------------------------
+                            ->helperText('Paste ID yang muncul di layar HP. Sistem akan otomatis mengenkripsinya.'),
 
                         Toggle::make('status_aktif')
                             ->label('Status Aktif')
