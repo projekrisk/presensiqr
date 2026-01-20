@@ -10,16 +10,20 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
-// Import Komponen
+// Import Komponen Form
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
+
+// Import Komponen Table
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\ToggleColumn;
-use Illuminate\Database\Eloquent\Builder; // Import Builder untuk Query
+use Filament\Tables\Actions\Action; // Import Action kustom
+use Illuminate\Contracts\View\View; // Import View
+use Illuminate\Database\Eloquent\Builder;
 
 class SiswaResource extends Resource
 {
@@ -44,10 +48,9 @@ class SiswaResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->reactive(), // Agar bisa filter kelas (nanti)
+                            ->reactive(),
 
-                        // PERBAIKAN: Sorting Kelas (Pendek dulu, baru Panjang)
-                        // Koreksi parameter: modifyQueryUsing
+                        // Sorting Kelas (Pendek dulu, baru Panjang)
                         Select::make('kelas_id')
                             ->relationship(
                                 name: 'kelas',
@@ -82,11 +85,10 @@ class SiswaResource extends Resource
                             ->imageEditor(),
 
                         // Field QR Code (Read Only / Hidden)
-                        // Kita tampilkan agar admin tahu kodenya sudah ter-generate
                         TextInput::make('qr_code_data')
                             ->label('Kode QR (Otomatis)')
                             ->disabled()
-                            ->dehydrated(false) // Jangan kirim nilai ini ke proses save, karena sudah di-handle Model
+                            ->dehydrated(false)
                             ->columnSpanFull(),
 
                         Toggle::make('status_aktif')
@@ -112,7 +114,7 @@ class SiswaResource extends Resource
                     ->sortable(),
                 TextColumn::make('sekolah.nama_sekolah')
                     ->label('Sekolah')
-                    ->toggleable(isToggledHiddenByDefault: true), // Sembunyikan default, munculkan jika perlu
+                    ->toggleable(isToggledHiddenByDefault: true),
                 ToggleColumn::make('status_aktif'),
             ])
             ->filters([
@@ -120,6 +122,20 @@ class SiswaResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+                // --- TOMBOL BARU: LIHAT QR ---
+                Action::make('qr_code')
+                    ->label('QR Code')
+                    ->icon('heroicon-o-qr-code')
+                    ->color('success')
+                    ->modalHeading('Kartu QR Siswa')
+                    ->modalContent(fn ($record): View => view(
+                        'filament.actions.qr-code', 
+                        ['record' => $record]
+                    ))
+                    ->modalSubmitAction(false) // Hilangkan tombol submit karena cuma view
+                    ->modalCancelAction(fn ($action) => $action->label('Tutup')),
+                // -----------------------------
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
