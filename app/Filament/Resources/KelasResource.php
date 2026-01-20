@@ -37,6 +37,7 @@ class KelasResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required()
+                    ->hidden(fn () => auth()->user()->sekolah_id !== null)
                     ->label('Sekolah'),
                 TextInput::make('nama_kelas')
                     ->required()

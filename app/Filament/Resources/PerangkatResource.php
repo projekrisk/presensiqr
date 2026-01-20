@@ -38,6 +38,7 @@ class PerangkatResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
+                            ->hidden(fn () => auth()->user()->sekolah_id !== null)
                             ->label('Milik Sekolah'),
 
                         TextInput::make('nama_device')

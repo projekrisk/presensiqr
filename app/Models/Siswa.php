@@ -2,31 +2,28 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSekolah; // Import Trait
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Traits\HasSekolah;
 
 class Siswa extends Model
 {
-    use HasFactory;
-    use HasSekolah;
+    use HasFactory, HasSekolah; // Pasang Trait
 
     protected $table = 'siswa';
     protected $guarded = [];
 
-    // --- LOGIKA OTOMATIS GENERATE QR ---
+    // Logika QR Code (Dari Tahap 3)
     protected static function booted()
     {
         static::saving(function ($siswa) {
-            // Jika NISN atau Nama berubah, generate ulang QR
-            // Format QR: SHA256(NISN + Nama + SecretKeyAplikasi)
-            // Ini aman karena tidak bisa ditebak siswa.
-
-            $dataMentah = $siswa->nisn . '_' . $siswa->nama_lengkap . '_' . env('APP_KEY');
-            $siswa->qr_code_data = hash('sha256', $dataMentah);
+            // Generate QR jika NISN/Nama berubah
+            if ($siswa->isDirty('nisn') || $siswa->isDirty('nama_lengkap')) {
+                 $dataMentah = $siswa->nisn . '_' . $siswa->nama_lengkap . '_' . env('APP_KEY');
+                 $siswa->qr_code_data = hash('sha256', $dataMentah);
+            }
         });
     }
 
@@ -39,5 +36,4 @@ class Siswa extends Model
     {
         return $this->hasMany(AbsensiHarian::class, 'siswa_id');
     }
-
 }

@@ -47,7 +47,7 @@ class SiswaResource extends Resource
                             ->relationship('sekolah', 'nama_sekolah')
                             ->searchable()
                             ->preload()
-                            ->label('Sekolah')
+                            ->label('Siswa')
                             ->required()
                             ->hidden(fn () => auth()->user()->sekolah_id !== null)
                             ->reactive(),

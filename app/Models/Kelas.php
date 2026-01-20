@@ -2,27 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Traits\HasSekolah;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Traits\HasSekolah;
 
 class Kelas extends Model
 {
-    use HasFactory;
-    use HasSekolah;
+    use HasFactory, HasSekolah;
 
-    protected $table = 'kelas'; // Paksa nama singular
+    protected $table = 'kelas';
     protected $guarded = [];
 
-    // Relasi: Kelas milik Sekolah
-    public function sekolah(): BelongsTo
-    {
-        return $this->belongsTo(Sekolah::class);
-    }
-
-    // Relasi: Kelas punya banyak Siswa
     public function siswa(): HasMany
     {
         return $this->hasMany(Siswa::class, 'kelas_id');
