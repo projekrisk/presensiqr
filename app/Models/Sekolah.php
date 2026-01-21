@@ -10,13 +10,16 @@ class Sekolah extends Model
 {
     use HasFactory;
 
-    // Paksa nama tabel jadi singular
     protected $table = 'sekolah';
-
-    // Izinkan semua kolom diisi
+    
     protected $guarded = [];
 
-    // Relasi: Satu Sekolah punya banyak User (Guru)
+    // Konversi otomatis JSON ke Array PHP dan Boolean
+    protected $casts = [
+        'hari_kerja' => 'array',
+        'status_aktif' => 'boolean',
+    ];
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'sekolah_id');
