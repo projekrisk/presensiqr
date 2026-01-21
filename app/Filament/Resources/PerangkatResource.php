@@ -25,6 +25,13 @@ class PerangkatResource extends Resource
     protected static ?string $slug = 'perangkat';
     protected static ?int $navigationSort = 5;
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->sekolah_id === null) return true;
+        return $user->peran === 'admin_sekolah';
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -27,7 +27,13 @@ class UserResource extends Resource
     
     protected static ?int $navigationSort = 9;
 
-    // --- FILTER QUERY (PENTING) ---
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->sekolah_id === null) return true;
+        return $user->peran === 'admin_sekolah';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
@@ -36,13 +42,10 @@ class UserResource extends Resource
             $currentUser = auth()->user();
 
             if ($currentUser->sekolah_id) {
-                // KONDISI 1: Yang login adalah Admin Sekolah
-                // Hanya tampilkan user dari sekolah yang sama
+                // Admin Sekolah: Hanya lihat user sekolah sendiri
                 $query->where('sekolah_id', $currentUser->sekolah_id);
             } else {
-                // KONDISI 2: Yang login adalah Super Admin
-                // Sembunyikan akun Super Admin (yang sekolah_id-nya NULL) dari list ini
-                // agar halaman ini murni hanya berisi Data Guru & Staf Sekolah.
+                // Super Admin: Sembunyikan sesama Super Admin
                 $query->whereNotNull('sekolah_id');
             }
         }
@@ -74,7 +77,7 @@ class UserResource extends Resource
 
                 TextInput::make('name')
                     ->required()
-                    ->label('Nama Guru'),
+                    ->label('Nama Lengkap'),
                 
                 TextInput::make('email')
                     ->email()
@@ -91,6 +94,7 @@ class UserResource extends Resource
                     ->options([
                         'guru' => 'Guru',
                         'admin_sekolah' => 'Admin Sekolah',
+                        'operator' => 'Operator Presensi', // <--- OPSI BARU
                     ])
                     ->default('guru')
                     ->required(),
@@ -115,6 +119,7 @@ class UserResource extends Resource
                 TextColumn::make('peran')->badge()->color(fn (string $state): string => match ($state) {
                     'guru' => 'info',
                     'admin_sekolah' => 'warning',
+                    'operator' => 'success',
                     default => 'gray',
                 }),
             ])

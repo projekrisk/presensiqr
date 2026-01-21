@@ -22,6 +22,13 @@ class KelasResource extends Resource
     protected static ?string $slug = 'kelas';
     protected static ?int $navigationSort = 2;
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->sekolah_id === null) return true;
+        return $user->peran === 'admin_sekolah';
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -9,8 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-
-// Import komponen Form
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
@@ -18,8 +16,6 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Toggle;
-
-// Import komponen Table
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -27,26 +23,25 @@ use Filament\Tables\Columns\ToggleColumn;
 class SekolahResource extends Resource
 {
     protected static ?string $model = Sekolah::class;
-
-    // Icon Sidebar
     protected static ?string $navigationIcon = 'heroicon-o-building-office-2';
-
-    // Label Sidebar
     protected static ?string $navigationLabel = 'Data Sekolah';
-
-    // URL Slug (Agar URL menjadi /admin/sekolah bukan /admin/sekolahs)
     protected static ?string $slug = 'sekolah';
-
-    // Urutan menu (1 = paling atas)
     protected static ?int $navigationSort = 1;
+
+    // --- FITUR KEAMANAN: HANYA SUPER ADMIN ---
+    public static function canViewAny(): bool
+    {
+        // Hanya user yang sekolah_id-nya NULL (Super Admin) yang bisa lihat menu ini
+        return auth()->check() && auth()->user()->sekolah_id === null;
+    }
+    // -----------------------------------------
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Grid::make(3) // Layout 3 kolom
+                Grid::make(3)
                 ->schema([
-                    // Kolom Kiri: Identitas (Lebar 2)
                     Section::make('Identitas Sekolah')
                         ->columnSpan(2)
                         ->schema([
@@ -65,14 +60,13 @@ class SekolahResource extends Resource
                                 ->label('Alamat Lengkap'),
                         ]),
 
-                    // Kolom Kanan: Langganan & Logo (Lebar 1)
                     Section::make('Status Langganan')
                         ->columnSpan(1)
                         ->schema([
                             FileUpload::make('logo')
                                 ->label('Logo Sekolah')
-                                ->disk('uploads') // Gunakan disk khusus tanpa symlink
-                                ->directory('sekolah-logo') // Folder di dalam uploads/
+                                ->disk('uploads')
+                                ->directory('sekolah-logo')
                                 ->image()
                                 ->imageEditor(), 
                             Select::make('paket_langganan')
@@ -100,7 +94,7 @@ class SekolahResource extends Resource
         return $table
             ->columns([
                 ImageColumn::make('logo')
-                    ->disk('uploads') // Wajib set disk di sini juga agar gambar tampil
+                    ->disk('uploads')
                     ->circular(),
                 TextColumn::make('npsn')
                     ->searchable()
@@ -123,9 +117,7 @@ class SekolahResource extends Resource
                 ToggleColumn::make('status_aktif')
                     ->label('Aktif'),
             ])
-            ->filters([
-                // Filter tambahan bisa ditaruh sini
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])
@@ -138,9 +130,7 @@ class SekolahResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array

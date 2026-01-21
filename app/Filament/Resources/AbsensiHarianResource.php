@@ -27,6 +27,15 @@ class AbsensiHarianResource extends Resource
     protected static ?string $slug = 'absensi-harian';
     protected static ?int $navigationSort = 4;
 
+    // --- IZIN AKSES: Super Admin, Admin Sekolah, DAN Operator ---
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->sekolah_id === null) return true;
+        // Operator BOLEH akses ini
+        return in_array($user->peran, ['admin_sekolah', 'operator']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -36,21 +45,14 @@ class AbsensiHarianResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn ($record) => "{$record->nama_lengkap} ({$record->nisn}) - {$record->kelas->nama_kelas}")
                     ->searchable(['nama_lengkap', 'nisn'])
                     ->required(),
-                DatePicker::make('tanggal')
-                    ->required(),
+                DatePicker::make('tanggal')->required(),
                 TimePicker::make('jam_masuk'),
                 TimePicker::make('jam_pulang'),
                 Select::make('status')
                     ->options([
-                        'Hadir' => 'Hadir',
-                        'Telat' => 'Telat',
-                        'Izin' => 'Izin',
-                        'Sakit' => 'Sakit',
-                        'Alpha' => 'Alpha',
+                        'Hadir' => 'Hadir', 'Telat' => 'Telat', 'Izin' => 'Izin', 'Sakit' => 'Sakit', 'Alpha' => 'Alpha',
                     ]),
                 TextInput::make('keterangan'),
-                
-                // Input Sekolah ID (Disembunyikan jika Admin Sekolah)
                 Select::make('sekolah_id')
                     ->relationship('sekolah', 'nama_sekolah')
                     ->required()
@@ -67,18 +69,11 @@ class AbsensiHarianResource extends Resource
                 TextColumn::make('siswa.kelas.nama_kelas')->label('Kelas')->sortable(),
                 TextColumn::make('jam_masuk')->time('H:i')->placeholder('-'),
                 TextColumn::make('status')->badge()->color(fn (string $state): string => match ($state) {
-                    'Hadir' => 'success',
-                    'Telat' => 'warning',
-                    'Alpha' => 'danger',
-                    'Sakit' => 'info',
-                    'Izin' => 'info',
-                    default => 'gray',
+                    'Hadir' => 'success', 'Telat' => 'warning', 'Alpha' => 'danger', 'Sakit' => 'info', 'Izin' => 'info', default => 'gray',
                 }),
                 TextColumn::make('sumber')->label('Via'),
-                // Sembunyikan kolom sekolah di tabel jika user adalah Admin Sekolah
                 TextColumn::make('sekolah.nama_sekolah')
-                    ->label('Sekolah')
-                    ->sortable()
+                    ->label('Sekolah')->sortable()
                     ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
             ])
             ->defaultSort('created_at', 'desc')
@@ -88,25 +83,13 @@ class AbsensiHarianResource extends Resource
                     ->label('Hari Ini')
                     ->default(),
                 SelectFilter::make('status')
-                    ->options([
-                        'Hadir' => 'Hadir',
-                        'Telat' => 'Telat',
-                        'Sakit' => 'Sakit',
-                        'Izin' => 'Izin',
-                        'Alpha' => 'Alpha',
-                    ]),
+                    ->options(['Hadir' => 'Hadir', 'Telat' => 'Telat', 'Sakit' => 'Sakit', 'Izin' => 'Izin', 'Alpha' => 'Alpha']),
             ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-            ])
+            ->actions([ Tables\Actions\EditAction::make() ])
             ->bulkActions([]);
     }
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
+    public static function getRelations(): array { return []; }
     public static function getPages(): array
     {
         return [

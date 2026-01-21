@@ -14,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Grid;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -24,60 +25,70 @@ use Illuminate\Database\Eloquent\Builder;
 class SiswaResource extends Resource
 {
     protected static ?string $model = Siswa::class;
-
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Data Siswa';
     protected static ?string $slug = 'siswa';
     protected static ?int $navigationSort = 3;
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if ($user->sekolah_id === null) return true;
+        return $user->peran === 'admin_sekolah';
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Data Akademik')
-                    ->schema([
-                        Select::make('sekolah_id')
-                            ->relationship('sekolah', 'nama_sekolah')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->reactive()
-                            ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
-                        
-                        Select::make('kelas_id')
-                            ->relationship(
-                                name: 'kelas',
-                                titleAttribute: 'nama_kelas',
-                                modifyQueryUsing: fn (Builder $query) => $query->orderByRaw('LENGTH(nama_kelas)')->orderBy('nama_kelas')
-                            )
-                            ->searchable()
-                            ->preload()
-                            ->required(),
-                            
-                        TextInput::make('nisn')->label('NISN')->numeric(),
-                        TextInput::make('nis')->label('NIS Lokal'),
-                    ])->columns(2),
-
                 Section::make('Data Pribadi')
                     ->schema([
-                        TextInput::make('nama_lengkap')->required(),
-                        Select::make('jenis_kelamin')
-                            ->options(['L' => 'Laki-laki', 'P' => 'Perempuan'])
-                            ->required(),
                         FileUpload::make('foto')
                             ->disk('uploads')
                             ->directory('siswa-foto')
                             ->image()
-                            ->imageEditor(),
+                            ->imageEditor()
+                            ->avatar()
+                            ->alignCenter()
+                            ->columnSpanFull(),
+
+                        Grid::make(2)->schema([
+                            TextInput::make('nama_lengkap')->label('Nama Lengkap')->required(),
+                            Select::make('jenis_kelamin')
+                                ->label('Jenis Kelamin')
+                                ->options(['L' => 'Laki-laki', 'P' => 'Perempuan'])
+                                ->required(),
+                        ]),
 
                         TextInput::make('qr_code_data')
-                            ->label('Kode QR (Otomatis)')
+                            ->label('Kode QR (Generate Otomatis)')
                             ->disabled()
                             ->dehydrated(false)
                             ->columnSpanFull(),
+                    ]),
 
-                        Toggle::make('status_aktif')->default(true),
-                    ])->columns(2),
+                Section::make('Data Akademik')
+                    ->schema([
+                        Grid::make(3)->schema([
+                            Select::make('kelas_id')
+                                ->relationship(
+                                    name: 'kelas',
+                                    titleAttribute: 'nama_kelas',
+                                    modifyQueryUsing: fn (Builder $query) => $query->orderByRaw('LENGTH(nama_kelas)')->orderBy('nama_kelas')
+                                )
+                                ->searchable()
+                                ->preload()
+                                ->required()
+                                ->label('Kelas'),
+                            TextInput::make('nisn')->label('NISN')->numeric()->required(),
+                            TextInput::make('nis')->label('NIS Lokal'),
+                        ]),
+                        Select::make('sekolah_id')
+                            ->relationship('sekolah', 'nama_sekolah')
+                            ->required()
+                            ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                        Toggle::make('status_aktif')->label('Status Aktif')->default(true),
+                    ]),
             ]);
     }
 
@@ -96,17 +107,14 @@ class SiswaResource extends Resource
                 ToggleColumn::make('status_aktif'),
             ])
             ->filters([])
+            // HEADER ACTIONS DIHAPUS DARI SINI KARENA SUDAH DI LISTSISWAS.PHP
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Action::make('qr_code')
-                    ->label('QR Code')
+                    ->label('QR')
                     ->icon('heroicon-o-qr-code')
                     ->color('success')
-                    ->modalHeading('Kartu QR Siswa')
-                    ->modalContent(fn ($record): View => view(
-                        'filament.actions.qr-code', 
-                        ['record' => $record]
-                    ))
+                    ->modalContent(fn ($record): View => view('filament.actions.qr-code', ['record' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelAction(fn ($action) => $action->label('Tutup')),
             ])
@@ -117,11 +125,7 @@ class SiswaResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [];
-    }
-
+    public static function getRelations(): array { return []; }
     public static function getPages(): array
     {
         return [
