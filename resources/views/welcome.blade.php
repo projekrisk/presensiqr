@@ -201,7 +201,7 @@
             <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-5xl font-bold text-white mb-4">Pilih Paket Langganan</h2>
-                    <p class="text-gray-400 max-w-2xl mx-auto">Mulai digitalisasi sekolah Anda dengan biaya terjangkau. Transparan, tanpa biaya tersembunyi.</p>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Mulai digitalisasi sekolah Anda dengan biaya terjangkau. Semua pendaftaran dimulai dengan paket Trial/Gratis.</p>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -233,7 +233,7 @@
                             </li>
                         </ul>
                         <button onclick="toggleModal('registerModal')" class="w-full py-4 rounded-xl border border-cyan-500/30 text-cyan-400 font-bold hover:bg-cyan-500 hover:text-white transition-all shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]">
-                            Mulai Trial Sekarang
+                            Daftar Sekarang (Gratis)
                         </button>
                     </div>
 
@@ -264,9 +264,11 @@
                                 Export Laporan Custom (Excel/PDF)
                             </li>
                         </ul>
-                        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20SIPQR,%20saya%20tertarik%20dengan%20Paket%20Tahunan" target="_blank" class="block text-center w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30">
-                            Pilih Paket Tahunan
-                        </a>
+                        <!-- Tombol ini sekarang juga membuka modal register, karena user harus daftar dulu -->
+                        <button onclick="toggleModal('registerModal')" class="block text-center w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30">
+                            Daftar Sekarang
+                        </button>
+                        <p class="text-xs text-center mt-3 text-gray-500">Upgrade ke Paket Tahunan tersedia di menu Profil Sekolah setelah login.</p>
                     </div>
                 </div>
             </div>
