@@ -129,18 +129,24 @@ class ProfilSekolah extends Page implements HasForms, HasActions
                                     ->label('Buka Gerbang (Mulai Scan)')
                                     ->helperText('Siswa tidak bisa absen sebelum jam ini.')
                                     ->seconds(false)
+                                    ->format('H:i') // Format 24 Jam (Indonesia)
+                                    ->displayFormat('H:i')
                                     ->required(),
 
                                 TimePicker::make('jam_masuk')
                                     ->label('Jam Masuk (Batas Telat)')
                                     ->helperText('Scan setelah jam ini dianggap TERLAMBAT.')
                                     ->seconds(false)
+                                    ->format('H:i') // Format 24 Jam (Indonesia)
+                                    ->displayFormat('H:i')
                                     ->required(),
 
                                 TimePicker::make('jam_pulang')
                                     ->label('Jam Pulang Sekolah')
                                     ->helperText('Siswa baru bisa scan pulang setelah jam ini.')
                                     ->seconds(false)
+                                    ->format('H:i') // Format 24 Jam (Indonesia)
+                                    ->displayFormat('H:i')
                                     ->required(),
                             ])->columns(3),
                     ])->columnSpanFull(),
