@@ -61,6 +61,40 @@
 </head>
 <body class="antialiased bg-dark text-white font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-white">
 
+    <!-- ALERTS (Feedback User) -->
+    @if(session('success'))
+    <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-lg px-4">
+        <div class="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center justify-between">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ session('success') }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-green-400 hover:text-white">✕</button>
+        </div>
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-lg px-4">
+        <div class="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md">
+            <div class="flex items-center mb-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="font-bold">Terjadi Kesalahan:</span>
+            </div>
+            <ul class="list-disc list-inside text-sm pl-8">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button onclick="this.parentElement.remove()" class="absolute top-3 right-3 text-red-400 hover:text-white">✕</button>
+        </div>
+    </div>
+    @endif
+
     <!-- BACKGROUND ELEMENTS -->
     <div class="fixed inset-0 z-0 bg-grid"></div>
     <!-- Glowing Orbs -->
@@ -196,30 +230,40 @@
                                 </div>
 
                                 <!-- Form -->
-                                <form action="#" method="POST" class="mt-6 space-y-4">
+                                <form action="{{ route('register.school') }}" method="POST" class="mt-6 space-y-4">
                                     @csrf
                                     <div>
                                         <label for="school_name" class="block text-sm font-medium text-gray-400 mb-1">Nama Sekolah</label>
-                                        <input type="text" name="school_name" id="school_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Contoh: SMA Negeri 1 Jakarta">
+                                        <input type="text" name="school_name" id="school_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Contoh: SMA Negeri 1 Jakarta" required value="{{ old('school_name') }}">
+                                    </div>
+
+                                    <div>
+                                        <label for="npsn" class="block text-sm font-medium text-gray-400 mb-1">NPSN (Nomor Pokok Sekolah Nasional)</label>
+                                        <input type="number" name="npsn" id="npsn" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="8 digit angka" required value="{{ old('npsn') }}">
                                     </div>
                                     
                                     <div>
-                                        <label for="admin_name" class="block text-sm font-medium text-gray-400 mb-1">Nama Penanggung Jawab</label>
-                                        <input type="text" name="admin_name" id="admin_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Nama lengkap admin">
+                                        <label for="admin_name" class="block text-sm font-medium text-gray-400 mb-1">Nama Admin / Kepala Sekolah</label>
+                                        <input type="text" name="admin_name" id="admin_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Nama lengkap" required value="{{ old('admin_name') }}">
                                     </div>
 
                                     <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-400 mb-1">Email Resmi</label>
-                                        <input type="email" name="email" id="email" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="admin@sekolah.sch.id">
+                                        <label for="email" class="block text-sm font-medium text-gray-400 mb-1">Email Login Admin</label>
+                                        <input type="email" name="email" id="email" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="admin@sekolah.sch.id" required value="{{ old('email') }}">
                                     </div>
 
                                     <div>
-                                        <label for="phone" class="block text-sm font-medium text-gray-400 mb-1">Nomor WhatsApp</label>
-                                        <input type="tel" name="phone" id="phone" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="0812...">
+                                        <label for="password" class="block text-sm font-medium text-gray-400 mb-1">Password Login</label>
+                                        <input type="password" name="password" id="password" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Minimal 8 karakter" required>
+                                    </div>
+
+                                    <div>
+                                        <label for="phone" class="block text-sm font-medium text-gray-400 mb-1">Nomor WhatsApp (Untuk Notifikasi)</label>
+                                        <input type="tel" name="phone" id="phone" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="0812..." required value="{{ old('phone') }}">
                                     </div>
 
                                     <div class="pt-4 flex flex-row-reverse gap-2">
-                                        <button type="button" class="w-full inline-flex justify-center rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto transition">Kirim Pendaftaran</button>
+                                        <button type="submit" class="w-full inline-flex justify-center rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto transition">Daftar Sekarang</button>
                                         <button type="button" onclick="toggleModal('registerModal')" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm font-semibold text-gray-300 shadow-sm hover:bg-white/10 sm:mt-0 sm:w-auto transition">Batal</button>
                                     </div>
                                 </form>
