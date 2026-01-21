@@ -166,11 +166,11 @@
                         </span>
                     </a>
 
-                    <!-- Register Button (Opens Modal) -->
-                    <button onclick="toggleModal('registerModal')" class="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
-                        <span>Daftarkan Sekolah</span>
+                    <!-- Register Button (Glass) -->
+                    <a href="#pricing" class="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
+                        <span>Lihat Paket</span>
                         <div class="w-2 h-2 rounded-full bg-green-500 group-hover:animate-ping"></div>
-                    </button>
+                    </a>
                 </div>
 
                 <!-- Stats / Trust Indicators -->
@@ -196,8 +196,84 @@
             </div>
         </main>
 
+        <!-- PRICING SECTION -->
+        <section class="py-20 relative" id="pricing">
+            <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white mb-4">Pilih Paket Langganan</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Mulai digitalisasi sekolah Anda dengan biaya terjangkau. Transparan, tanpa biaya tersembunyi.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <!-- Free Tier (Trial) -->
+                    <div class="p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-cyan-500/50 transition-all duration-300 relative group">
+                        <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <h3 class="text-xl font-bold text-white mb-2">Paket Trial</h3>
+                        <div class="flex items-baseline gap-1 mb-6">
+                            <span class="text-4xl font-bold text-cyan-400">Rp 0</span>
+                            <span class="text-gray-400">/ 4 Bulan</span>
+                        </div>
+                        <p class="text-gray-400 mb-8 text-sm leading-relaxed">Cocok untuk sekolah yang ingin mencoba sistem presensi digital tanpa risiko finansial.</p>
+                        <ul class="space-y-4 mb-8 text-sm text-gray-300">
+                            <li class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Akses Penuh Dashboard Admin
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Aplikasi Android Guru & Kiosk
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Unlimited Siswa & Guru
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Laporan Presensi Real-time
+                            </li>
+                        </ul>
+                        <button onclick="toggleModal('registerModal')" class="w-full py-4 rounded-xl border border-cyan-500/30 text-cyan-400 font-bold hover:bg-cyan-500 hover:text-white transition-all shadow-[0_0_20px_rgba(6,182,212,0.1)] hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]">
+                            Mulai Trial Sekarang
+                        </button>
+                    </div>
+
+                    <!-- Annual Tier (Pro) -->
+                    <div class="p-8 rounded-3xl bg-gradient-to-b from-blue-900/40 to-white/5 border border-blue-500/30 relative overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                        <div class="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-lg">POPULAR</div>
+                        <h3 class="text-xl font-bold text-white mb-2">Paket Tahunan</h3>
+                        <div class="flex items-baseline gap-1 mb-6">
+                            <span class="text-4xl font-bold text-white">Rp 1.5jt</span>
+                            <span class="text-gray-400">/ Tahun</span>
+                        </div>
+                        <p class="text-gray-400 mb-8 text-sm leading-relaxed">Solusi jangka panjang dengan dukungan prioritas dan fitur kustomisasi laporan.</p>
+                        <ul class="space-y-4 mb-8 text-sm text-gray-300">
+                            <li class="flex items-center gap-3">
+                                <div class="p-1 rounded-full bg-blue-500/20"><svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                                <strong>Semua Fitur Paket Trial</strong>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="p-1 rounded-full bg-blue-500/20"><svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                                Prioritas Support 24/7 via WA
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="p-1 rounded-full bg-blue-500/20"><svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                                Backup Data Harian Otomatis
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="p-1 rounded-full bg-blue-500/20"><svg class="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                                Export Laporan Custom (Excel/PDF)
+                            </li>
+                        </ul>
+                        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20SIPQR,%20saya%20tertarik%20dengan%20Paket%20Tahunan" target="_blank" class="block text-center w-full py-4 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30">
+                            Pilih Paket Tahunan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- FOOTER -->
-        <footer class="py-6 text-center text-gray-600 text-xs font-medium relative z-10">
+        <footer class="py-6 text-center text-gray-600 text-xs font-medium relative z-10 border-t border-white/5">
             <p>&copy; {{ date('Y') }} SIPQR SYSTEM. ENGINEERED FOR EDUCATION.</p>
         </footer>
     </div>
