@@ -12,9 +12,9 @@ use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\FileUpload; // Import FileUpload
+use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ImageColumn; // Import ImageColumn
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
@@ -27,12 +27,24 @@ class UserResource extends Resource
     
     protected static ?int $navigationSort = 9;
 
+    // --- FILTER QUERY (PENTING) ---
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
 
-        if (auth()->check() && auth()->user()->sekolah_id) {
-            $query->where('sekolah_id', auth()->user()->sekolah_id);
+        if (auth()->check()) {
+            $currentUser = auth()->user();
+
+            if ($currentUser->sekolah_id) {
+                // KONDISI 1: Yang login adalah Admin Sekolah
+                // Hanya tampilkan user dari sekolah yang sama
+                $query->where('sekolah_id', $currentUser->sekolah_id);
+            } else {
+                // KONDISI 2: Yang login adalah Super Admin
+                // Sembunyikan akun Super Admin (yang sekolah_id-nya NULL) dari list ini
+                // agar halaman ini murni hanya berisi Data Guru & Staf Sekolah.
+                $query->whereNotNull('sekolah_id');
+            }
         }
 
         return $query;
@@ -50,7 +62,6 @@ class UserResource extends Resource
                     ->label('Sekolah')
                     ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
                 
-                // TAMBAHAN: Upload Foto Profil
                 FileUpload::make('foto')
                     ->avatar()
                     ->disk('uploads')
@@ -90,7 +101,6 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                // TAMBAHAN: Kolom Foto
                 ImageColumn::make('foto')
                     ->disk('uploads')
                     ->circular()
