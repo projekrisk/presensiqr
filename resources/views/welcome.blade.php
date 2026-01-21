@@ -53,6 +53,10 @@
             background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                               linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
+        /* Hide scrollbar for modal */
+        .no-scroll {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="antialiased bg-dark text-white font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-white">
@@ -128,11 +132,11 @@
                         </span>
                     </a>
 
-                    <!-- Register Button (Glass) -->
-                    <a href="https://wa.me/6281234567890" target="_blank" class="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
+                    <!-- Register Button (Opens Modal) -->
+                    <button onclick="toggleModal('registerModal')" class="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
                         <span>Daftarkan Sekolah</span>
                         <div class="w-2 h-2 rounded-full bg-green-500 group-hover:animate-ping"></div>
-                    </a>
+                    </button>
                 </div>
 
                 <!-- Stats / Trust Indicators -->
@@ -163,6 +167,101 @@
             <p>&copy; {{ date('Y') }} SIPQR SYSTEM. ENGINEERED FOR EDUCATION.</p>
         </footer>
     </div>
+
+    <!-- REGISTRATION MODAL -->
+    <div id="registerModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop"></div>
+
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                
+                <!-- Modal Panel -->
+                <div class="relative transform overflow-hidden rounded-2xl bg-dark border border-white/10 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg scale-95 opacity-0" id="modalPanel">
+                    
+                    <!-- Glow Effect -->
+                    <div class="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-blue-600 rounded-full mix-blend-screen filter blur-[60px] opacity-20 pointer-events-none"></div>
+                    
+                    <div class="bg-white/5 px-4 pb-4 pt-5 sm:p-6 sm:pb-4 relative z-10">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+                                </svg>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-xl font-semibold leading-6 text-white" id="modal-title">Registrasi Sekolah Baru</h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-400">Isi data di bawah ini untuk memulai digitalisasi sekolah Anda.</p>
+                                </div>
+
+                                <!-- Form -->
+                                <form action="#" method="POST" class="mt-6 space-y-4">
+                                    @csrf
+                                    <div>
+                                        <label for="school_name" class="block text-sm font-medium text-gray-400 mb-1">Nama Sekolah</label>
+                                        <input type="text" name="school_name" id="school_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Contoh: SMA Negeri 1 Jakarta">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="admin_name" class="block text-sm font-medium text-gray-400 mb-1">Nama Penanggung Jawab</label>
+                                        <input type="text" name="admin_name" id="admin_name" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Nama lengkap admin">
+                                    </div>
+
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-400 mb-1">Email Resmi</label>
+                                        <input type="email" name="email" id="email" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="admin@sekolah.sch.id">
+                                    </div>
+
+                                    <div>
+                                        <label for="phone" class="block text-sm font-medium text-gray-400 mb-1">Nomor WhatsApp</label>
+                                        <input type="tel" name="phone" id="phone" class="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="0812...">
+                                    </div>
+
+                                    <div class="pt-4 flex flex-row-reverse gap-2">
+                                        <button type="button" class="w-full inline-flex justify-center rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 sm:ml-3 sm:w-auto transition">Kirim Pendaftaran</button>
+                                        <button type="button" onclick="toggleModal('registerModal')" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white/5 border border-white/10 px-3 py-2.5 text-sm font-semibold text-gray-300 shadow-sm hover:bg-white/10 sm:mt-0 sm:w-auto transition">Batal</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleModal(modalID){
+            const modal = document.getElementById(modalID);
+            const backdrop = document.getElementById('modalBackdrop');
+            const panel = document.getElementById('modalPanel');
+            const body = document.body;
+
+            if(modal.classList.contains('hidden')){
+                // Open
+                modal.classList.remove('hidden');
+                body.classList.add('no-scroll'); // Prevent body scroll
+                
+                // Animation In
+                setTimeout(() => {
+                    backdrop.classList.remove('opacity-0');
+                    panel.classList.remove('scale-95', 'opacity-0');
+                    panel.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                // Close Animation
+                backdrop.classList.add('opacity-0');
+                panel.classList.remove('scale-100', 'opacity-100');
+                panel.classList.add('scale-95', 'opacity-0');
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    body.classList.remove('no-scroll');
+                }, 300); // Wait for transition
+            }
+        }
+    </script>
 
 </body>
 </html>
