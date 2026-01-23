@@ -35,8 +35,6 @@ class GuruAbsensiController extends Controller
             return response()->json([]);
         }
 
-        // Cari data absensi dari jurnal yang sudah ada
-        // Logika: Cari jurnal guru pada tanggal & kelas tsb, lalu ambil detailnya
         $jurnal = JurnalGuru::where('kelas_id', $kelas->id)
                     ->where('tanggal', $tanggal)
                     ->where('user_id', $user->id)
@@ -47,12 +45,11 @@ class GuruAbsensiController extends Controller
             return response()->json([]);
         }
 
-        // Format data agar sesuai dengan model AbsensiItem di Android
         $data = $jurnal->detail->map(function($detail) use ($jurnal) {
             return [
                 'siswa_id' => $detail->siswa_id,
                 'tanggal' => $jurnal->tanggal->format('Y-m-d'),
-                'jam_masuk' => $jurnal->jam_ke ?? '00:00', // Gunakan jam_ke atau default
+                'jam_masuk' => '00:00', 
                 'status' => $detail->status,
                 'sekolah_id' => $jurnal->sekolah_id,
             ];
@@ -76,7 +73,6 @@ class GuruAbsensiController extends Controller
             'details.*.status'   => 'required|in:Hadir,Sakit,Izin,Alpha',
         ]);
 
-        // Cek apakah jurnal untuk kelas & tanggal ini sudah ada?
         $jurnal = JurnalGuru::where('user_id', $user->id)
             ->where('kelas_id', $request->kelas_id)
             ->where('tanggal', $request->tanggal)
@@ -85,39 +81,53 @@ class GuruAbsensiController extends Controller
         DB::beginTransaction();
         try {
             if (!$jurnal) {
-                // Buat Jurnal Baru
+                // Buat Jurnal Baru (VERSI SEDERHANA - Tanpa Mapel/Jam)
                 $jurnal = JurnalGuru::create([
                     'sekolah_id'     => $user->sekolah_id,
                     'user_id'        => $user->id,
                     'kelas_id'       => $request->kelas_id,
                     'tanggal'        => $request->tanggal,
-                    'mata_pelajaran' => 'Wali Kelas / Umum', // Default
-                    'jam_ke'         => date('H:i'),
                 ]);
             }
 
-            // Hapus detail lama agar tidak duplikat (reset status hari itu)
+            // Hapus detail lama
             DetailJurnal::where('jurnal_guru_id', $jurnal->id)->delete();
 
-            // Insert data baru
+            // Insert data baru & Hitung Rekap
             $insertData = [];
+            $rekap = ['Hadir' => 0, 'Sakit' => 0, 'Izin' => 0, 'Alpha' => 0];
+
             foreach ($request->details as $item) {
+                $status = $item['status'];
+                if (isset($rekap[$status])) {
+                    $rekap[$status]++;
+                }
+
                 $insertData[] = [
                     'jurnal_guru_id' => $jurnal->id,
                     'siswa_id'       => $item['siswa_id'],
-                    'status'         => $item['status'],
+                    'status'         => $status,
                     'created_at'     => now(),
                     'updated_at'     => now(),
                 ];
             }
             DetailJurnal::insert($insertData);
 
+            // Update Rekap Jumlah di Tabel Induk (Agar di Admin Table muncul angkanya)
+            $jurnal->update([
+                'hadir' => $rekap['Hadir'],
+                'sakit' => $rekap['Sakit'],
+                'izin'  => $rekap['Izin'],
+                'alpha' => $rekap['Alpha'],
+            ]);
+
             DB::commit();
             return response()->json(['message' => 'Jurnal berhasil disimpan', 'id' => $jurnal->id]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Gagal menyimpan: ' . $e->getMessage()], 500);
+            // Tampilkan pesan error asli untuk debugging di Android (Toast)
+            return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
         }
     }
 }
