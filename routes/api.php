@@ -10,7 +10,6 @@ use App\Http\Controllers\Api\GuruAbsensiController;
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-|
 */
 
 // 1. Route Publik (Login & Auth)
@@ -26,11 +25,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Sync Data Siswa untuk Guru
     Route::get('/guru/siswa', [SyncController::class, 'getSiswa']);
 
-    // Cek Riwayat Absensi (Fitur DatePicker - BARU)
+    // Cek Riwayat Absensi
     Route::get('/guru/absensi-check', [GuruAbsensiController::class, 'check']);
+    
+    // Simpan Jurnal Guru (BARU)
+    Route::post('/guru/jurnal', [GuruAbsensiController::class, 'store']);
 });
 
 // 3. Route Khusus Kiosk (Tanpa Token User, Validasi via Header X-Device-Hash)
-// Logic validasi ada di dalam Controller
 Route::post('/kiosk/sync-up', [SyncController::class, 'uploadAbsensi']);
 Route::get('/kiosk/siswa', [SyncController::class, 'getSiswa']);
