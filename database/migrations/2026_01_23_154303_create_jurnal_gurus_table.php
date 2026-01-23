@@ -18,12 +18,9 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete(); // Guru
             $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete();
 
-            $table->string('mata_pelajaran');
-            $table->text('materi')->nullable(); // Materi opsional
             $table->date('tanggal');
-            $table->string('jam_ke')->nullable();
 
-            // Rekap (Opsional, diisi trigger/observer nanti)
+            // Rekap Jumlah
             $table->integer('hadir')->default(0);
             $table->integer('izin')->default(0);
             $table->integer('sakit')->default(0);
@@ -32,7 +29,6 @@ return new class extends Migration
             $table->timestamps();
         });
     }
-
 
 
     /**

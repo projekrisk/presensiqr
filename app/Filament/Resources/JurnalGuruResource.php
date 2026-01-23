@@ -12,7 +12,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Tables\Columns\TextColumn;
@@ -29,7 +28,6 @@ class JurnalGuruResource extends Resource
     // --- FILTER HAK AKSES ---
     public static function canViewAny(): bool
     {
-        // Bisa dilihat oleh Guru dan Admin Sekolah (Operator tidak perlu)
         $user = auth()->user();
         if ($user->sekolah_id === null) return true; // Super Admin
         return in_array($user->peran, ['guru', 'admin_sekolah']);
@@ -38,7 +36,7 @@ class JurnalGuruResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        // Filter: Hanya tampilkan data milik user yang sedang login
+        // Guru hanya melihat datanya sendiri
         if (auth()->check() && auth()->user()->peran === 'guru') {
             $query->where('user_id', auth()->id());
         }
@@ -49,40 +47,29 @@ class JurnalGuruResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Data Pertemuan Kelas')
+                Section::make('Info Absensi')
                     ->schema([
                         Select::make('kelas_id')
                             ->relationship('kelas', 'nama_kelas')
                             ->required()
-                            ->disabled() // Di android otomatis, di admin web mungkin perlu enable jika create manual
-                            ->dehydrated() // Agar tetap terkirim meski disabled
+                            ->disabled() 
+                            ->dehydrated() 
                             ->label('Kelas'),
-
-                        TextInput::make('mata_pelajaran')
-                            ->required()
-                            ->label('Mata Pelajaran'),
 
                         DatePicker::make('tanggal')
                             ->displayFormat('d F Y')
                             ->required(),
-
-                        TextInput::make('jam_ke')->label('Jam Pelajaran Ke'),
-                        
-                        TextInput::make('materi')
-                            ->columnSpanFull()
-                            ->label('Catatan / Materi (Opsional)'),
                     ])->columns(2),
 
                 // Repeater untuk Detail Siswa
                 Section::make('Rekap Kehadiran Siswa')
-                    ->description('Daftar siswa yang diabsen melalui Aplikasi Android')
                     ->schema([
                         Repeater::make('detail')
                             ->relationship()
                             ->schema([
                                 Select::make('siswa_id')
                                     ->relationship('siswa', 'nama_lengkap')
-                                    ->disabled() // Nama siswa readonly
+                                    ->disabled() 
                                     ->dehydrated()
                                     ->label('Nama Siswa')
                                     ->required(),
@@ -95,10 +82,10 @@ class JurnalGuruResource extends Resource
                                         'Alpha' => 'Alpha',
                                     ])
                                     ->required()
-                                    ->label('Status Kehadiran'),
+                                    ->label('Status'),
                             ])
                             ->columns(2)
-                            ->addable(false) // Tidak boleh tambah siswa manual di sini
+                            ->addable(false) 
                             ->deletable(false)
                             ->reorderable(false)
                             ->label('Detail Siswa'),
@@ -111,11 +98,9 @@ class JurnalGuruResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('tanggal')->date('d M Y')->sortable()->label('Tanggal'),
-                TextColumn::make('jam_ke')->label('Jam Ke'),
                 TextColumn::make('kelas.nama_kelas')->weight('bold')->searchable()->label('Kelas'),
-                TextColumn::make('mata_pelajaran')->searchable()->label('Mapel'),
                 
-                // Menampilkan ringkasan kehadiran di tabel depan
+                // Menampilkan ringkasan kehadiran
                 TextColumn::make('detail_count')
                      ->counts('detail')
                      ->label('Total Siswa'),
@@ -123,7 +108,7 @@ class JurnalGuruResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make()->label('Lihat Detail'),
+                Tables\Actions\EditAction::make()->label('Lihat'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([

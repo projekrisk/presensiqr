@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Traits\HasSekolah; // Import Trait
+use App\Models\Traits\HasSekolah; 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,12 +11,11 @@ use Illuminate\Support\Facades\Auth;
 
 class JurnalGuru extends Model
 {
-    use HasFactory, HasSekolah; // Pasang Trait
+    use HasFactory, HasSekolah; 
 
     protected $table = 'jurnal_guru';
     protected $guarded = [];
 
-    // Otomatis isi user_id saat dibuat
     protected static function booted()
     {
         static::creating(function ($model) {
