@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete();
 
             $table->string('mata_pelajaran');
-            $table->text('materi');
+            $table->text('materi')->nullable(); // Materi opsional
             $table->date('tanggal');
             $table->string('jam_ke')->nullable();
 
@@ -32,6 +32,7 @@ return new class extends Migration
             $table->timestamps();
         });
     }
+
 
 
     /**

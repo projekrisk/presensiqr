@@ -21,9 +21,9 @@ class JurnalGuruResource extends Resource
 {
     protected static ?string $model = JurnalGuru::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-book-open';
-    protected static ?string $navigationLabel = 'Jurnal Mengajar Saya';
-    protected static ?string $slug = 'jurnal-guru';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check'; 
+    protected static ?string $navigationLabel = 'Absensi Kelas (Guru)'; 
+    protected static ?string $slug = 'absensi-kelas';
     protected static ?int $navigationSort = 1; 
 
     // --- FILTER HAK AKSES ---
@@ -38,8 +38,7 @@ class JurnalGuruResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        // Filter: Hanya tampilkan jurnal milik user yang sedang login (kecuali Super Admin/Admin Sekolah mau lihat semua)
-        // Untuk strict privacy guru:
+        // Filter: Hanya tampilkan data milik user yang sedang login
         if (auth()->check() && auth()->user()->peran === 'guru') {
             $query->where('user_id', auth()->id());
         }
@@ -50,12 +49,14 @@ class JurnalGuruResource extends Resource
     {
         return $form
             ->schema([
-                Section::make('Informasi Pelajaran')
+                Section::make('Data Pertemuan Kelas')
                     ->schema([
                         Select::make('kelas_id')
                             ->relationship('kelas', 'nama_kelas')
                             ->required()
-                            ->label('Kelas'), // Bisa diedit admin, tapi di android otomatis
+                            ->disabled() // Di android otomatis, di admin web mungkin perlu enable jika create manual
+                            ->dehydrated() // Agar tetap terkirim meski disabled
+                            ->label('Kelas'),
 
                         TextInput::make('mata_pelajaran')
                             ->required()
@@ -65,12 +66,16 @@ class JurnalGuruResource extends Resource
                             ->displayFormat('d F Y')
                             ->required(),
 
-                        TextInput::make('jam_ke')->label('Jam Ke'),
-                        TextInput::make('materi')->columnSpanFull()->label('Materi / Topik'),
+                        TextInput::make('jam_ke')->label('Jam Pelajaran Ke'),
+                        
+                        TextInput::make('materi')
+                            ->columnSpanFull()
+                            ->label('Catatan / Materi (Opsional)'),
                     ])->columns(2),
 
                 // Repeater untuk Detail Siswa
-                Section::make('Daftar Kehadiran Siswa')
+                Section::make('Rekap Kehadiran Siswa')
+                    ->description('Daftar siswa yang diabsen melalui Aplikasi Android')
                     ->schema([
                         Repeater::make('detail')
                             ->relationship()
@@ -78,6 +83,7 @@ class JurnalGuruResource extends Resource
                                 Select::make('siswa_id')
                                     ->relationship('siswa', 'nama_lengkap')
                                     ->disabled() // Nama siswa readonly
+                                    ->dehydrated()
                                     ->label('Nama Siswa')
                                     ->required(),
 
@@ -89,10 +95,16 @@ class JurnalGuruResource extends Resource
                                         'Alpha' => 'Alpha',
                                     ])
                                     ->required()
-                                    ->label('Status'),
+                                    ->label('Status Kehadiran')
+                                    ->colors([
+                                         'success' => 'Hadir',
+                                         'warning' => 'Izin',
+                                         'info' => 'Sakit',
+                                         'danger' => 'Alpha',
+                                    ]),
                             ])
                             ->columns(2)
-                            ->addable(false) // Data siswa otomatis dari Android
+                            ->addable(false) // Tidak boleh tambah siswa manual di sini
                             ->deletable(false)
                             ->reorderable(false)
                             ->label('Detail Siswa'),
@@ -104,16 +116,20 @@ class JurnalGuruResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('tanggal')->date('d M Y')->sortable(),
-                TextColumn::make('jam_ke')->label('Jam'),
-                TextColumn::make('kelas.nama_kelas')->weight('bold')->searchable(),
-                TextColumn::make('mata_pelajaran')->searchable(),
-                TextColumn::make('materi')->limit(30),
+                TextColumn::make('tanggal')->date('d M Y')->sortable()->label('Tanggal'),
+                TextColumn::make('jam_ke')->label('Jam Ke'),
+                TextColumn::make('kelas.nama_kelas')->weight('bold')->searchable()->label('Kelas'),
+                TextColumn::make('mata_pelajaran')->searchable()->label('Mapel'),
+                
+                // Menampilkan ringkasan kehadiran di tabel depan
+                TextColumn::make('detail_count')
+                     ->counts('detail')
+                     ->label('Total Siswa'),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()->label('Lihat Detail'),
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
