@@ -95,13 +95,7 @@ class JurnalGuruResource extends Resource
                                         'Alpha' => 'Alpha',
                                     ])
                                     ->required()
-                                    ->label('Status Kehadiran')
-                                    ->colors([
-                                         'success' => 'Hadir',
-                                         'warning' => 'Izin',
-                                         'info' => 'Sakit',
-                                         'danger' => 'Alpha',
-                                    ]),
+                                    ->label('Status Kehadiran'),
                             ])
                             ->columns(2)
                             ->addable(false) // Tidak boleh tambah siswa manual di sini
