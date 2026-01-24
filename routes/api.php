@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SyncController;
 use App\Http\Controllers\Api\GuruAbsensiController;
+use App\Http\Controllers\Api\LaporanGuruController; // <-- Import Controller Baru
 
 /*
 |--------------------------------------------------------------------------
@@ -12,26 +13,28 @@ use App\Http\Controllers\Api\GuruAbsensiController;
 |--------------------------------------------------------------------------
 */
 
-// 1. Route Publik (Login & Auth)
+// 1. Route Publik
 Route::post('/login/guru', [AuthController::class, 'loginGuru']);
 Route::post('/login/kiosk', [AuthController::class, 'loginKiosk']);
 
-// 2. Route Perlu Izin (Harus punya Token Login Guru)
+// 2. Route Perlu Login (Token)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
     
-    // Sync Data Siswa untuk Guru
+    // Sync
     Route::get('/guru/siswa', [SyncController::class, 'getSiswa']);
 
-    // Cek Riwayat Absensi
+    // Absensi Harian (Cek & Simpan Jurnal)
     Route::get('/guru/absensi-check', [GuruAbsensiController::class, 'check']);
-    
-    // Simpan Jurnal Guru (BARU)
     Route::post('/guru/jurnal', [GuruAbsensiController::class, 'store']);
+
+    // --- ROUTE LAPORAN (BARU) ---
+    Route::get('/guru/laporan/summary', [LaporanGuruController::class, 'summary']);
+    Route::get('/guru/laporan/detail', [LaporanGuruController::class, 'detail']);
 });
 
-// 3. Route Khusus Kiosk (Tanpa Token User, Validasi via Header X-Device-Hash)
+// 3. Route Kiosk (Device Hash)
 Route::post('/kiosk/sync-up', [SyncController::class, 'uploadAbsensi']);
 Route::get('/kiosk/siswa', [SyncController::class, 'getSiswa']);
