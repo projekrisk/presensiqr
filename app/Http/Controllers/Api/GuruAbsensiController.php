@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AbsensiHarian;
 use App\Models\JurnalGuru;
 use App\Models\DetailJurnal;
 use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon; // Import Carbon
 
 class GuruAbsensiController extends Controller
 {
@@ -24,7 +24,8 @@ class GuruAbsensiController extends Controller
             'kelas' => 'required|string',
         ]);
 
-        $tanggal = $request->query('tanggal');
+        // Gunakan Carbon untuk memastikan format tanggal Y-m-d
+        $tanggal = Carbon::parse($request->query('tanggal'))->format('Y-m-d');
         $namaKelas = $request->query('kelas');
 
         $kelas = Kelas::where('nama_kelas', $namaKelas)
@@ -35,8 +36,9 @@ class GuruAbsensiController extends Controller
             return response()->json([]);
         }
 
+        // Cari data absensi
         $jurnal = JurnalGuru::where('kelas_id', $kelas->id)
-                    ->where('tanggal', $tanggal)
+                    ->whereDate('tanggal', $tanggal) // Gunakan whereDate agar lebih aman
                     ->where('user_id', $user->id)
                     ->with('detail')
                     ->first();
@@ -48,7 +50,7 @@ class GuruAbsensiController extends Controller
         $data = $jurnal->detail->map(function($detail) use ($jurnal) {
             return [
                 'siswa_id' => $detail->siswa_id,
-                'tanggal' => $jurnal->tanggal->format('Y-m-d'),
+                'tanggal' => Carbon::parse($jurnal->tanggal)->format('Y-m-d'),
                 'jam_masuk' => '00:00', 
                 'status' => $detail->status,
                 'sekolah_id' => $jurnal->sekolah_id,
@@ -75,13 +77,13 @@ class GuruAbsensiController extends Controller
 
         $jurnal = JurnalGuru::where('user_id', $user->id)
             ->where('kelas_id', $request->kelas_id)
-            ->where('tanggal', $request->tanggal)
+            ->whereDate('tanggal', $request->tanggal)
             ->first();
 
         DB::beginTransaction();
         try {
             if (!$jurnal) {
-                // Buat Jurnal Baru (VERSI SEDERHANA - Tanpa Mapel/Jam)
+                // Buat Jurnal Baru
                 $jurnal = JurnalGuru::create([
                     'sekolah_id'     => $user->sekolah_id,
                     'user_id'        => $user->id,
@@ -90,7 +92,7 @@ class GuruAbsensiController extends Controller
                 ]);
             }
 
-            // Hapus detail lama
+            // Hapus detail lama agar tidak duplikat
             DetailJurnal::where('jurnal_guru_id', $jurnal->id)->delete();
 
             // Insert data baru & Hitung Rekap
@@ -113,7 +115,7 @@ class GuruAbsensiController extends Controller
             }
             DetailJurnal::insert($insertData);
 
-            // Update Rekap Jumlah di Tabel Induk (Agar di Admin Table muncul angkanya)
+            // Update Rekap Jumlah
             $jurnal->update([
                 'hadir' => $rekap['Hadir'],
                 'sakit' => $rekap['Sakit'],
@@ -126,7 +128,6 @@ class GuruAbsensiController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Tampilkan pesan error asli untuk debugging di Android (Toast)
             return response()->json(['message' => 'Server Error: ' . $e->getMessage()], 500);
         }
     }
