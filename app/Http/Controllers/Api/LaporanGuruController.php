@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\AbsensiHarian;
+use App\Models\DetailJurnal; // Gunakan ini, bukan AbsensiHarian
+use App\Models\JurnalGuru;
 use App\Models\Kelas;
 use App\Models\Siswa;
 use Illuminate\Http\Request;
@@ -31,51 +32,48 @@ class LaporanGuruController extends Controller
                       ->first();
 
         if (!$kelas) {
-            return response()->json([], 200); // Kelas tidak ketemu
+            return response()->json([], 200);
         }
 
         // 2. Ambil Siswa di kelas tersebut
         $siswaIds = Siswa::where('kelas_id', $kelas->id)->pluck('id');
 
-        // 3. Hitung Statistik Absensi dari tabel AbsensiHarian
-        // Kita gunakan GROUP BY siswa_id untuk menghitung total per siswa
-        $laporan = AbsensiHarian::whereIn('siswa_id', $siswaIds)
-            ->whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->whereIn('status', ['Alpha', 'Sakit', 'Izin']) // Hanya ambil yang tidak hadir
+        // 3. PERBAIKAN: Hitung Statistik dari DetailJurnal (Bukan AbsensiHarian)
+        // Join dengan tabel induk (jurnal_guru) untuk filter tanggal
+        $laporan = DetailJurnal::whereIn('siswa_id', $siswaIds)
+            ->whereHas('jurnal', function ($query) use ($bulan, $tahun) {
+                $query->whereMonth('tanggal', $bulan)
+                      ->whereYear('tanggal', $tahun);
+            })
+            ->whereIn('status', ['Alpha', 'Sakit', 'Izin'])
             ->select('siswa_id', DB::raw('count(*) as total'))
             ->groupBy('siswa_id')
             ->get();
 
-        // 4. Format Data untuk Android
+        // 4. Format Data
         $hasil = [];
         
-        // Loop semua siswa yang punya record tidak hadir
-        // (Siswa yang hadir terus tidak perlu ditampilkan di list "Ketidakhadiran")
         foreach ($laporan as $rekap) {
             $siswa = Siswa::find($rekap->siswa_id);
             
-            // Hitung detail per status
-            $alpha = AbsensiHarian::where('siswa_id', $rekap->siswa_id)
-                ->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)
-                ->where('status', 'Alpha')->count();
-            
-            $sakit = AbsensiHarian::where('siswa_id', $rekap->siswa_id)
-                ->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)
-                ->where('status', 'Sakit')->count();
-
-            $izin = AbsensiHarian::where('siswa_id', $rekap->siswa_id)
-                ->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun)
-                ->where('status', 'Izin')->count();
+            // Helper query untuk hitung per status
+            // Kita bungkus dalam fungsi anonymous biar rapi
+            $countStatus = function($status) use ($rekap, $bulan, $tahun) {
+                return DetailJurnal::where('siswa_id', $rekap->siswa_id)
+                    ->whereHas('jurnal', function ($q) use ($bulan, $tahun) {
+                        $q->whereMonth('tanggal', $bulan)->whereYear('tanggal', $tahun);
+                    })
+                    ->where('status', $status)->count();
+            };
 
             $hasil[] = [
                 'siswa_id' => $siswa->id,
                 'nama_siswa' => $siswa->nama_lengkap,
                 'nisn' => $siswa->nisn,
                 'total_tidak_hadir' => $rekap->total,
-                'total_alpha' => $alpha,
-                'total_sakit' => $sakit,
-                'total_izin' => $izin,
+                'total_alpha' => $countStatus('Alpha'),
+                'total_sakit' => $countStatus('Sakit'),
+                'total_izin' => $countStatus('Izin'),
             ];
         }
 
@@ -91,20 +89,26 @@ class LaporanGuruController extends Controller
             'tahun' => 'required|numeric',
         ]);
 
-        // Ambil list tanggal ketidakhadiran
-        $detail = AbsensiHarian::where('siswa_id', $request->siswa_id)
-            ->whereMonth('tanggal', $request->bulan)
-            ->whereYear('tanggal', $request->tahun)
+        // PERBAIKAN: Ambil dari DetailJurnal
+        $detail = DetailJurnal::where('siswa_id', $request->siswa_id)
+            ->whereHas('jurnal', function ($q) use ($request) {
+                $q->whereMonth('tanggal', $request->bulan)
+                  ->whereYear('tanggal', $request->tahun);
+            })
+            ->with('jurnal') // Load parent untuk ambil tanggal
             ->whereIn('status', ['Alpha', 'Sakit', 'Izin'])
-            ->orderBy('tanggal', 'asc')
             ->get()
             ->map(function ($item) {
                 return [
-                    'tanggal' => date('d M Y', strtotime($item->tanggal)),
+                    // Ambil tanggal dari tabel parent (JurnalGuru)
+                    'tanggal' => date('d M Y', strtotime($item->jurnal->tanggal)),
                     'status' => $item->status,
-                    'keterangan' => $item->keterangan ?? '-',
+                    'keterangan' => $item->jurnal->mata_pelajaran ?? '-', // Tampilkan Mapel sebagai info
                 ];
-            });
+            })
+            // Sort manual karena tanggal ada di relation
+            ->sortBy('tanggal')
+            ->values(); // Reset keys
 
         return response()->json($detail);
     }
