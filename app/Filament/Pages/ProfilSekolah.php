@@ -9,25 +9,14 @@ use Filament\Forms\Form;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\ViewField;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
-// Import untuk Action Langganan
-use Filament\Actions\Action;
-use Filament\Actions\Contracts\HasActions;
-use Filament\Actions\Concerns\InteractsWithActions;
-use Filament\Forms\Components\Select;
-use App\Models\Paket;
-use App\Models\Rekening;
-use App\Models\Tagihan;
-
-class ProfilSekolah extends Page implements HasForms, HasActions
+class ProfilSekolah extends Page implements HasForms
 {
     use InteractsWithForms;
-    use InteractsWithActions;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-library';
     protected static ?string $navigationLabel = 'Profil Sekolah';
@@ -95,18 +84,8 @@ class ProfilSekolah extends Page implements HasForms, HasActions
                                 TextInput::make('email_admin')->email(),
                             ])->columns(2),
                         
-                        // TAB 2: Langganan
-                        Tabs\Tab::make('Paket Langganan')
-                            ->icon('heroicon-m-credit-card')
-                            ->schema([
-                                ViewField::make('info_paket')
-                                    ->view('filament.forms.components.info-paket')
-                                    ->viewData([
-                                        'getRecord' => fn () => Auth::user()->sekolah
-                                    ]),
-                            ]),
-                            
-                        // TAB 3: Pengaturan Presensi
+                        // TAB 2: Pengaturan Presensi
+                        // (Tab Paket Langganan dihapus dari sini untuk dipindah ke Sidebar Widget)
                         Tabs\Tab::make('Aturan Jam & Hari')
                             ->icon('heroicon-m-clock')
                             ->schema([
@@ -179,44 +158,5 @@ class ProfilSekolah extends Page implements HasForms, HasActions
             
             Notification::make()->success()->title('Profil & Pengaturan Diperbarui')->send();
         }
-    }
-
-    public function upgradePaketAction(): Action
-    {
-        return Action::make('upgradePaket')
-            ->label('Upgrade Paket')
-            ->modalHeading('Pilih Paket Langganan')
-            ->form([
-                Select::make('paket_id')
-                    ->label('Pilih Paket')
-                    // PERBAIKAN: Hanya tampilkan paket berbayar (harga > 0)
-                    ->options(Paket::where('is_active', true)
-                                   ->where('harga', '>', 0) 
-                                   ->pluck('nama_paket', 'id'))
-                    ->required()
-                    ->reactive(),
-                    
-                Select::make('rekening_id')
-                    ->label('Metode Pembayaran (Transfer Bank)')
-                    ->options(Rekening::where('is_active', true)->get()->mapWithKeys(function ($item) {
-                        return [$item->id => "{$item->nama_bank} - {$item->nomor_rekening}"];
-                    }))
-                    ->required(),
-            ])
-            ->action(function (array $data) {
-                $sekolah = Auth::user()->sekolah;
-                $paket = Paket::find($data['paket_id']);
-                
-                Tagihan::create([
-                    'sekolah_id' => $sekolah->id,
-                    'paket_id' => $paket->id,
-                    'rekening_id' => $data['rekening_id'],
-                    'jumlah_bayar' => $paket->harga,
-                    'status' => 'pending',
-                ]);
-                
-                Notification::make()->success()->title('Invoice Berhasil Dibuat')->send();
-                $this->redirect(\App\Filament\Resources\TagihanResource::getUrl('index'));
-            });
     }
 }
