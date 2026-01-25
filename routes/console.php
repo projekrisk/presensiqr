@@ -1,14 +1,14 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule;
+    use Illuminate\Support\Facades\Schedule;
+    use Illuminate\Foundation\Inspiring;
+    use Illuminate\Support\Facades\Artisan;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+    // Contoh command bawaan (bisa dihapus atau dibiarkan)
+    Artisan::command('inspire', function () {
+        $this->comment(Inspiring::quote());
+    })->purpose('Display an inspiring quote')->hourly();
 
-// Jalankan perintah mark-alpha setiap hari jam 10:00 WIB
-Schedule::command('absensi:mark-alpha')
-        ->dailyAt('10:00')
-        ->timezone('Asia/Jakarta');
+    // --- SCHEDULER PEMBATALAN TAGIHAN ---
+    // Jalankan pengecekan setiap jam
+    Schedule::command('tagihan:autocancel')->hourly();

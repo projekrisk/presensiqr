@@ -14,8 +14,8 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Placeholder; // Import Placeholder
-use Filament\Forms\Components\Hidden;      // Import Hidden
+use Filament\Forms\Components\Placeholder; 
+use Filament\Forms\Components\Hidden;      
 use Filament\Notifications\Notification;
 use App\Models\Paket;
 use App\Models\Rekening;
@@ -64,6 +64,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                         'pending' => 'warning',
                         'paid' => 'success',
                         'rejected' => 'danger',
+                        'cancelled' => 'gray', // Warna untuk status cancelled
                         default => 'gray',
                     }),
                 TextColumn::make('created_at')->date('d M Y')->label('Tanggal'),
