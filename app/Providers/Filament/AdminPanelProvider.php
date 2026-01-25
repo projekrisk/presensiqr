@@ -17,9 +17,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-// Import Render Hook & Blade untuk Widget Sidebar
-use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -33,19 +30,18 @@ class AdminPanelProvider extends PanelProvider
             
             // --- PENGATURAN BRANDING ---
             ->brandName('SIPQR Admin') 
-            // Pastikan file favicon.png ada di folder public
             ->favicon(asset('favicon.png')) 
             ->brandLogo(asset('favicon.png'))
             ->brandLogoHeight('3rem')
             // ---------------------------
 
-            // --- WIDGET SIDEBAR (Status Langganan) ---
-            // Menyuntikkan komponen Livewire di bagian paling bawah navigasi sidebar
+            // [HAPUS BAGIAN INI] renderHook untuk sidebar widget dihapus karena sudah diganti MemberPage
+            /*
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_NAV_END,
                 fn () => Blade::render('@livewire(\'sidebar-subscription-widget\')')
             )
-            // ----------------------------------------
+            */
 
             ->colors([
                 'primary' => Color::Blue,
@@ -58,7 +54,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                // Widgets\FilamentInfoWidget::class, // Opsional: Hapus widget info filament default
             ])
             ->middleware([
                 EncryptCookies::class,

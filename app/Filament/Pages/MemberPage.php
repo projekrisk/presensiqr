@@ -58,23 +58,48 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                 TextColumn::make('nomor_invoice')->label('No. Invoice')->searchable(),
                 TextColumn::make('paket.nama_paket')->label('Paket'),
                 TextColumn::make('jumlah_bayar')->money('IDR')->label('Total'),
+                
+                // LOGIKA STATUS DINAMIS (Tanpa Cron Job)
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'paid' => 'success',
-                        'rejected' => 'danger',
-                        'cancelled' => 'gray', // Warna untuk status cancelled
+                    ->formatStateUsing(fn (Tagihan $record) => 
+                        // Jika pending lebih dari 24 jam, tampilkan "Kadaluwarsa"
+                        ($record->status === 'pending' && $record->created_at->addHours(24)->isPast()) 
+                            ? 'Kadaluwarsa' 
+                            : ucfirst($record->status)
+                    )
+                    ->color(fn (Tagihan $record) => match (true) {
+                        // Prioritas 1: Cek Kedaluwarsa
+                        $record->status === 'pending' && $record->created_at->addHours(24)->isPast() => 'gray',
+                        // Prioritas 2: Status asli
+                        $record->status === 'pending' => 'warning',
+                        $record->status === 'paid' => 'success',
+                        $record->status === 'rejected' => 'danger',
                         default => 'gray',
                     }),
+
                 TextColumn::make('created_at')->date('d M Y')->label('Tanggal'),
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
             ->actions([
                 \Filament\Tables\Actions\Action::make('bayar')
-                    ->label('Bayar / Upload')
-                    ->icon('heroicon-o-credit-card')
-                    ->url(fn (Tagihan $record) => \App\Filament\Resources\TagihanResource::getUrl('edit', ['record' => $record]))
+                    ->label(fn (Tagihan $record) => 
+                        ($record->created_at->addHours(24)->isPast()) ? 'Kadaluwarsa' : 'Bayar / Upload'
+                    )
+                    ->icon(fn (Tagihan $record) => 
+                        ($record->created_at->addHours(24)->isPast()) ? 'heroicon-o-x-circle' : 'heroicon-o-credit-card'
+                    )
+                    ->color(fn (Tagihan $record) => 
+                        ($record->created_at->addHours(24)->isPast()) ? 'gray' : 'primary'
+                    )
+                    // Matikan tombol jika sudah lewat 24 jam
+                    ->disabled(fn (Tagihan $record) => 
+                        $record->created_at->addHours(24)->isPast()
+                    )
+                    // Hapus URL jika expired agar tidak bisa diklik kanan -> open new tab
+                    ->url(fn (Tagihan $record) => 
+                        $record->created_at->addHours(24)->isPast() ? null : \App\Filament\Resources\TagihanResource::getUrl('edit', ['record' => $record])
+                    )
                     ->visible(fn (Tagihan $record) => $record->status === 'pending'),
             ]);
     }
@@ -90,10 +115,9 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
             ->color('primary')
             ->icon('heroicon-o-sparkles')
             ->modalHeading('Upgrade ke Akun Premium')
-            // Deskripsi modal dihapus agar tidak duplikat dengan konten form
             ->modalSubmitActionLabel('Buat Tagihan')
             ->form([
-                // 1. Tampilan Info Paket Besar & Jelas
+                // Tampilkan Info Paket (Read Only)
                 Placeholder::make('detail_paket')
                     ->hiddenLabel()
                     ->content(fn () => new \Illuminate\Support\HtmlString("
@@ -115,7 +139,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                 Hidden::make('paket_id')
                     ->default($paketPremium?->id),
                     
-                // 2. Pilihan Bank
+                // Pilihan Bank
                 Select::make('rekening_id')
                     ->label('Metode Pembayaran (Transfer Bank)')
                     ->options(Rekening::where('is_active', true)->get()->mapWithKeys(function ($item) {
@@ -125,7 +149,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                     ->native(false)
                     ->prefixIcon('heroicon-m-building-library'),
 
-                // 3. Panduan Langkah Pembayaran
+                // Panduan Langkah Pembayaran
                 Placeholder::make('panduan')
                     ->hiddenLabel()
                     ->content(new \Illuminate\Support\HtmlString("
@@ -138,7 +162,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                                 <li>Pilih <strong>Bank Tujuan</strong> di atas.</li>
                                 <li>Klik tombol <strong>Buat Tagihan</strong> untuk memproses invoice.</li>
                                 <li>Lakukan transfer sejumlah nominal ke rekening tersebut.</li>
-                                <li>Upload bukti transfer pada menu <strong>Riwayat Tagihan</strong> di bawah ini.</li>
+                                <li>Upload bukti transfer pada menu <strong>Riwayat Tagihan</strong> di bawah ini (Batas waktu 24 jam).</li>
                             </ol>
                         </div>
                     ")),
