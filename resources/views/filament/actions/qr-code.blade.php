@@ -3,61 +3,89 @@
         @php
             $qrData = $record->qr_code_data;
             
-            // 1. Logika Pencarian Logo yang Lebih Kuat
+            // 1. Logika Pencarian Logo
             $logoPath = null;
             if ($record->sekolah && $record->sekolah->logo) {
                 $filename = $record->sekolah->logo;
-
-                // Cek di disk 'uploads' (Prioritas utama sesuai konfigurasi kita)
+                // Cek lokasi file di storage atau public
                 try {
                     if (\Illuminate\Support\Facades\Storage::disk('uploads')->exists($filename)) {
                         $logoPath = \Illuminate\Support\Facades\Storage::disk('uploads')->path($filename);
-                    }
-                    // Cek di disk 'public' (Cadangan)
-                    elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($filename)) {
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($filename)) {
                         $logoPath = \Illuminate\Support\Facades\Storage::disk('public')->path($filename);
                     }
-                } catch (\Exception $e) {
-                    // Abaikan error jika disk tidak ditemukan, lanjut ke cek manual
-                }
-
-                // Cek Manual (Hardcheck) jika Storage Facade gagal
+                } catch (\Exception $e) {}
+                
+                // Fallback manual check
                 if (!$logoPath) {
                     if (file_exists(public_path('uploads/' . $filename))) {
                         $logoPath = public_path('uploads/' . $filename);
-                    } elseif (file_exists(storage_path('app/public/' . $filename))) {
-                        $logoPath = storage_path('app/public/' . $filename);
                     }
                 }
             }
 
+            $src = '';
+            
             // 2. Generate QR Code
             if ($logoPath && file_exists($logoPath)) {
-                // JIKA ADA LOGO: Gunakan format PNG dan Merge
                 try {
-                    $pngData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                    // A. Generate QR Mentah (PNG) dengan Error Correction High
+                    // Error 'H' (High) wajib agar QR tetap terbaca meski tengahnya ditutup
+                    $baseQr = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
                                 ->size(300)
                                 ->margin(1)
-                                ->errorCorrection('H') // High error correction
-                                ->merge($logoPath, 0.3, true) // 0.3 = 30% ukuran, true = absolute path
+                                ->errorCorrection('H')
                                 ->generate($qrData);
-                                
-                    $src = 'data:image/png;base64,' . base64_encode($pngData);
+
+                    // B. Manipulasi Gambar dengan GD Library (Agar ada Background Putih)
+                    $qrImage = imagecreatefromstring($baseQr);
+                    $logoImage = imagecreatefromstring(file_get_contents($logoPath));
+                    
+                    if ($qrImage && $logoImage) {
+                        $qrWidth = imagesx($qrImage);
+                        $qrHeight = imagesy($qrImage);
+                        $logoOriginalW = imagesx($logoImage);
+                        $logoOriginalH = imagesy($logoImage);
+                        
+                        // Hitung ukuran logo (30% dari lebar QR)
+                        $logoTargetW = $qrWidth * 0.30;
+                        $scale = $logoOriginalW / $logoTargetW;
+                        $logoTargetH = $logoOriginalH / $scale;
+                        
+                        // Hitung posisi tengah
+                        $centerX = ($qrWidth - $logoTargetW) / 2;
+                        $centerY = ($qrHeight - $logoTargetH) / 2;
+                        
+                        // [FITUR BARU] Buat Kotak Putih di Tengah (Menghapus titik QR)
+                        $whiteColor = imagecolorallocate($qrImage, 255, 255, 255);
+                        imagefilledrectangle($qrImage, $centerX, $centerY, $centerX + $logoTargetW, $centerY + $logoTargetH, $whiteColor);
+                        
+                        // Tempel Logo di atas area putih
+                        imagecopyresampled($qrImage, $logoImage, $centerX, $centerY, 0, 0, $logoTargetW, $logoTargetH, $logoOriginalW, $logoOriginalH);
+                        
+                        // Render ke Base64
+                        ob_start();
+                        imagepng($qrImage);
+                        $finalQrData = ob_get_contents();
+                        ob_end_clean();
+                        
+                        $src = 'data:image/png;base64,' . base64_encode($finalQrData);
+                        
+                        // Bersihkan memori
+                        imagedestroy($qrImage);
+                        imagedestroy($logoImage);
+                    } else {
+                        // Fallback jika GD gagal
+                        $src = 'data:image/png;base64,' . base64_encode($baseQr);
+                    }
                 } catch (\Exception $e) {
-                    // Jika merge gagal (misal format gambar tidak support), fallback ke QR biasa
-                    $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                                ->size(300)
-                                ->margin(1)
-                                ->generate($qrData);
+                    // Fallback ke SVG standar jika error
+                    $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(300)->margin(1)->generate($qrData);
                     $src = 'data:image/svg+xml;base64,' . base64_encode($svgData);
                 }
             } else {
-                // JIKA TIDAK ADA LOGO: Fallback ke SVG
-                $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
-                            ->size(300)
-                            ->margin(1)
-                            ->generate($qrData);
-                            
+                // Tidak ada logo -> Pakai SVG standar (Lebih tajam)
+                $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')->size(300)->margin(1)->generate($qrData);
                 $src = 'data:image/svg+xml;base64,' . base64_encode($svgData);
             }
         @endphp
