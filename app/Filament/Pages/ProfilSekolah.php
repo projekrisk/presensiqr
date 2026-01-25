@@ -10,11 +10,12 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\ViewField;
-use Filament\Forms\Components\CheckboxList; 
-use Filament\Forms\Components\TimePicker;   
+use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 
+// Import untuk Action Langganan
 use Filament\Actions\Action;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -46,6 +47,7 @@ class ProfilSekolah extends Page implements HasForms, HasActions
 
     public function mount(): void
     {
+        // Keamanan Tambahan
         if (Auth::user()->peran !== 'admin_sekolah') {
             abort(403, 'Akses Ditolak. Halaman ini khusus Admin Sekolah.');
         }
@@ -54,11 +56,14 @@ class ProfilSekolah extends Page implements HasForms, HasActions
 
         if ($sekolah) {
             $this->form->fill([
+                // Data Identitas
                 'nama_sekolah' => $sekolah->nama_sekolah,
                 'npsn' => $sekolah->npsn,
                 'alamat' => $sekolah->alamat,
                 'email_admin' => $sekolah->email_admin,
                 'logo' => $sekolah->logo,
+                
+                // Data Pengaturan Presensi
                 'hari_kerja' => $sekolah->hari_kerja ?? [],
                 'jam_mulai_absen' => $sekolah->jam_mulai_absen,
                 'jam_masuk' => $sekolah->jam_masuk,
@@ -124,9 +129,9 @@ class ProfilSekolah extends Page implements HasForms, HasActions
                                     ->label('Buka Gerbang (Mulai Scan)')
                                     ->helperText('Siswa tidak bisa absen sebelum jam ini.')
                                     ->seconds(false)
-                                    ->native(false) // Nonaktifkan native picker browser
-                                    ->format('H:i') // Simpan format 24 jam
-                                    ->displayFormat('H:i') // Tampilkan format 24 jam
+                                    ->native(false)
+                                    ->format('H:i')
+                                    ->displayFormat('H:i')
                                     ->closeOnDateSelection()
                                     ->required(),
 
@@ -184,7 +189,10 @@ class ProfilSekolah extends Page implements HasForms, HasActions
             ->form([
                 Select::make('paket_id')
                     ->label('Pilih Paket')
-                    ->options(Paket::where('is_active', true)->pluck('nama_paket', 'id'))
+                    // PERBAIKAN: Hanya tampilkan paket berbayar (harga > 0)
+                    ->options(Paket::where('is_active', true)
+                                   ->where('harga', '>', 0) 
+                                   ->pluck('nama_paket', 'id'))
                     ->required()
                     ->reactive(),
                     
