@@ -55,25 +55,24 @@ class PerangkatResource extends Resource
                         TextInput::make('device_id_hash')
                             ->label('Device ID (Salin dari HP)')
                             ->required()
-                            // PERBAIKAN: Ganti unique() bawaan dengan Custom Rule
-                            // Agar sistem mengecek HASH-nya, bukan teks mentahnya
                             ->rules([
                                 function ($record) {
                                     return function (string $attribute, $value, \Closure $fail) use ($record) {
                                         // 1. Hash dulu input dari user
                                         $hashedValue = hash('sha256', $value);
                                         
-                                        // 2. Cek apakah hash tersebut sudah ada di database
-                                        $query = Perangkat::where('device_id_hash', $hashedValue);
+                                        // 2. Cek apakah hash tersebut sudah ada di database SECARA GLOBAL
+                                        // Gunakan withoutGlobalScopes() agar pengecekan tembus lintas sekolah
+                                        $query = Perangkat::withoutGlobalScopes()->where('device_id_hash', $hashedValue);
                                         
                                         // Jika sedang edit ($record ada), kecualikan data diri sendiri
                                         if ($record) {
                                             $query->where('id', '!=', $record->id);
                                         }
 
-                                        // 3. Jika ada, gagalkan validasi
+                                        // 3. Jika ada, gagalkan validasi dengan pesan yang jelas
                                         if ($query->exists()) {
-                                            $fail('Perangkat dengan ID ini sudah terdaftar di sekolah lain atau sudah ada.');
+                                            $fail('Perangkat dengan ID ini sudah terdaftar di dalam sistem (mungkin di sekolah lain).');
                                         }
                                     };
                                 }
