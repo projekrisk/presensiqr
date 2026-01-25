@@ -20,7 +20,7 @@
                     <span class="px-3 py-1 rounded-full text-sm font-bold {{ $isPro ? 'bg-success-600 text-white' : 'bg-gray-600 text-white' }}">
                         {{ ucfirst($paket) }} Plan
                     </span>
-                    <span class="ml-2 text-sm text-gray-500">
+                    <span class="ml-2 text-sm text-gray-500 dark:text-gray-400">
                         @if($sekolah->tgl_berakhir_langganan)
                             Berakhir pada: {{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->translatedFormat('d F Y') }}
                         @else

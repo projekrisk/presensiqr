@@ -14,6 +14,8 @@ use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Placeholder; // Import Placeholder
+use Filament\Forms\Components\Hidden;      // Import Hidden
 use Filament\Notifications\Notification;
 use App\Models\Paket;
 use App\Models\Rekening;
@@ -33,7 +35,6 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
     protected static string $view = 'filament.pages.member-page';
     protected static ?int $navigationSort = 10;
 
-    // Hanya Admin Sekolah yang bisa lihat menu ini
     public static function shouldRegisterNavigation(): bool
     {
         return Auth::check() && Auth::user()->peran === 'admin_sekolah';
@@ -51,7 +52,6 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
     {
         return $table
             ->query(
-                // Ambil tagihan milik sekolah ini saja
                 Tagihan::query()->where('sekolah_id', Auth::user()->sekolah_id)->latest()
             )
             ->columns([
@@ -70,7 +70,6 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
             ->actions([
-                // Aksi untuk Upload Bukti jika masih pending (Menggunakan URL resource tagihan)
                 \Filament\Tables\Actions\Action::make('bayar')
                     ->label('Bayar / Upload')
                     ->icon('heroicon-o-credit-card')
@@ -79,43 +78,57 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
             ]);
     }
 
-    // --- ACTION: UPGRADE PAKET ---
+    // --- ACTION: UPGRADE PAKET (DIRECT) ---
     public function upgradeAction(): Action
     {
+        // Otomatis ambil paket berbayar pertama (Premium Tahunan)
+        $paketPremium = Paket::where('harga', '>', 0)->first();
+
         return Action::make('upgrade')
             ->label('Upgrade Paket')
             ->color('primary')
             ->icon('heroicon-o-sparkles')
-            ->modalHeading('Pilih Paket Langganan')
+            ->modalHeading('Upgrade ke Akun Premium')
+            ->modalDescription('Dapatkan akses penuh selama 1 tahun dengan prioritas dukungan teknis.')
+            ->modalSubmitActionLabel('Buat Tagihan')
             ->form([
-                Select::make('paket_id')
-                    ->label('Pilih Paket')
-                    ->options(Paket::where('is_active', true)->where('harga', '>', 0)->pluck('nama_paket', 'id'))
-                    ->required()
-                    ->reactive(),
+                // Tampilkan Info Paket (Read Only)
+                Placeholder::make('info_paket')
+                    ->label('Paket Pilihan')
+                    ->content(fn () => $paketPremium ? "{$paketPremium->nama_paket} - Rp " . number_format($paketPremium->harga, 0, ',', '.') : 'Paket Tidak Tersedia'),
+
+                // Hidden Input untuk ID Paket
+                Hidden::make('paket_id')
+                    ->default($paketPremium?->id),
                     
+                // Pilihan Bank
                 Select::make('rekening_id')
                     ->label('Metode Pembayaran (Transfer Bank)')
                     ->options(Rekening::where('is_active', true)->get()->mapWithKeys(function ($item) {
-                        return [$item->id => "{$item->nama_bank} - {$item->nomor_rekening}"];
+                        return [$item->id => "{$item->nama_bank} - {$item->nomor_rekening} (a.n {$item->atas_nama})"];
                     }))
-                    ->required(),
+                    ->required()
+                    ->native(false),
             ])
-            ->action(function (array $data) {
+            ->action(function (array $data) use ($paketPremium) {
+                if (!$paketPremium) {
+                    Notification::make()->danger()->title('Paket tidak ditemukan')->send();
+                    return;
+                }
+
                 $sekolah = Auth::user()->sekolah;
-                $paket = Paket::find($data['paket_id']);
                 
                 Tagihan::create([
                     'sekolah_id' => $sekolah->id,
-                    'paket_id' => $paket->id,
+                    'paket_id' => $data['paket_id'],
                     'rekening_id' => $data['rekening_id'],
-                    'jumlah_bayar' => $paket->harga,
+                    'jumlah_bayar' => $paketPremium->harga,
                     'status' => 'pending',
                 ]);
                 
                 Notification::make()->success()->title('Invoice Berhasil Dibuat')->send();
                 
-                // Refresh halaman untuk melihat tabel terupdate
+                // Refresh halaman untuk melihat invoice baru di tabel
                 return redirect()->route('filament.admin.pages.member-area');
             });
     }
