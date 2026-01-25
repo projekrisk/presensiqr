@@ -11,9 +11,9 @@
 
 <div class="grid md:grid-cols-3 gap-6 p-4">
     <!-- KARTU STATUS (Lebar 2 Kolom) -->
-    <div class="md:col-span-2 relative overflow-hidden rounded-2xl border shadow-md {{ $isPro ? 'border-primary-500' : 'border-gray-200 dark:border-gray-700' }}">
+    <div class="md:col-span-2 relative overflow-hidden rounded-2xl border shadow-sm {{ $isPro ? 'border-primary-500 dark:border-primary-600' : 'border-gray-200 dark:border-gray-700' }}">
         
-        <!-- Background Gradient -->
+        <!-- Background: Putih di Light, Abu Gelap di Dark -->
         <div class="absolute inset-0 {{ $isPro ? 'bg-gradient-to-br from-primary-600 to-primary-800' : 'bg-white dark:bg-gray-900' }} z-0"></div>
         
         <!-- Dekorasi Circle (Hanya untuk Pro) -->
@@ -25,7 +25,7 @@
         <div class="relative z-10 p-8 flex flex-col h-full justify-between">
             <div class="flex justify-between items-start">
                 <div>
-                    <p class="text-sm font-semibold tracking-wider uppercase mb-1 {{ $isPro ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400' }}">
+                    <p class="text-xs font-bold tracking-widest uppercase mb-1 {{ $isPro ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400' }}">
                         Paket Aktif Saat Ini
                     </p>
                     <h2 class="text-3xl font-black {{ $isPro ? 'text-white' : 'text-gray-900 dark:text-white' }}">
@@ -33,7 +33,7 @@
                     </h2>
                 </div>
                 <!-- Icon Badge -->
-                <div class="p-3 rounded-xl {{ $isPro ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-800' }}">
+                <div class="p-3 rounded-xl {{ $isPro ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' }}">
                     <x-filament::icon 
                         icon="{{ $isPro ? 'heroicon-m-star' : 'heroicon-m-sparkles' }}" 
                         class="w-8 h-8" 
@@ -43,14 +43,14 @@
 
             <div class="mt-8 pt-6 border-t {{ $isPro ? 'border-white/20' : 'border-gray-100 dark:border-gray-800' }}">
                 <div class="flex items-center gap-2">
-                    <x-filament::icon icon="heroicon-m-calendar" class="w-5 h-5 {{ $isPro ? 'text-primary-200' : 'text-gray-400' }}"/>
+                    <x-filament::icon icon="heroicon-m-calendar" class="w-5 h-5 {{ $isPro ? 'text-primary-200' : 'text-gray-400 dark:text-gray-500' }}"/>
                     <span class="text-sm font-medium {{ $isPro ? 'text-primary-50' : 'text-gray-600 dark:text-gray-300' }}">
                         Masa Aktif: 
                         @if($sekolah->tgl_berakhir_langganan)
-                            <span class="font-bold">{{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->translatedFormat('d F Y') }}</span>
-                            ({{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->diffForHumans() }})
+                            <span class="font-bold text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->translatedFormat('d F Y') }}</span>
+                            <span class="text-xs">({{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->diffForHumans() }})</span>
                         @else
-                            <span class="font-bold">Selamanya (Mode Trial)</span>
+                            <span class="font-bold text-gray-900 dark:text-white">Selamanya (Mode Trial)</span>
                         @endif
                     </span>
                 </div>
@@ -63,7 +63,7 @@
         @if($tagihanPending)
             <!-- STATUS: MENUNGGU PEMBAYARAN -->
             <div class="w-16 h-16 bg-warning-100 dark:bg-warning-900/30 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                <x-filament::icon icon="heroicon-m-clock" class="w-8 h-8 text-warning-600" />
+                <x-filament::icon icon="heroicon-m-clock" class="w-8 h-8 text-warning-600 dark:text-warning-400" />
             </div>
             
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tagihan Pending</h3>
@@ -78,7 +78,7 @@
         @elseif(!$isPro)
             <!-- STATUS: FREE (TAWARKAN UPGRADE) -->
             <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-4">
-                <x-filament::icon icon="heroicon-m-rocket-launch" class="w-8 h-8 text-primary-600" />
+                <x-filament::icon icon="heroicon-m-rocket-launch" class="w-8 h-8 text-primary-600 dark:text-primary-400" />
             </div>
             
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Upgrade ke Pro</h3>
@@ -94,7 +94,7 @@
         @else
             <!-- STATUS: SUDAH PRO -->
             <div class="w-16 h-16 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center mb-4">
-                <x-filament::icon icon="heroicon-m-shield-check" class="w-8 h-8 text-success-600" />
+                <x-filament::icon icon="heroicon-m-shield-check" class="w-8 h-8 text-success-600 dark:text-success-400" />
             </div>
             
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Akun Premium</h3>
