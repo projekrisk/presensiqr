@@ -15,13 +15,14 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Placeholder; 
-use Filament\Forms\Components\Hidden;      
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\FileUpload; // <--- PERBAIKAN: Import FileUpload Ditambahkan
 use Filament\Notifications\Notification;
 use App\Models\Paket;
 use App\Models\Rekening;
 use App\Models\Tagihan;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Carbon; // Import Carbon
+use Illuminate\Support\Carbon;
 
 class MemberPage extends Page implements HasForms, HasActions, HasTable
 {
@@ -75,20 +76,16 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                         default => 'gray',
                     }),
 
-                // KOLOM DIBUAT TANGGAL DIHAPUS (Sesuai Permintaan)
-
                 // KOLOM INFORMASI / DEADLINE
                 TextColumn::make('info_waktu')
                     ->label('Batas Waktu / Masa Aktif') 
                     ->getStateUsing(function (Tagihan $record) {
-                        // KASUS 1: Sudah Lunas -> Tampilkan Kapan Paket Berakhir
                         if ($record->status === 'paid' && $record->tgl_lunas) {
                             return Carbon::parse($record->tgl_lunas)
                                 ->addDays($record->paket->durasi_hari)
                                 ->translatedFormat('d M Y');
                         }
                         
-                        // KASUS 2: Pending -> Tampilkan Deadline Pembayaran
                         if ($record->status === 'pending') {
                             $deadline = $record->created_at->addHours(24);
                             
@@ -96,12 +93,9 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                                 return 'Invoice Kadaluwarsa';
                             }
                             
-                            // PERBAIKAN: Hapus diffForHumans (jam dari sekarang)
-                            // Hanya tampilkan Tanggal dan Jam absolut
                             return $deadline->timezone('Asia/Jakarta')->format('d M Y H:i'); 
                         }
                         
-                        // KASUS 3: Batal/Ditolak
                         return 'Tidak Berlaku';
                     })
                     ->color(fn (Tagihan $record) => match($record->status) {
@@ -115,7 +109,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
             ->actions([
-                // PERBAIKAN: Gunakan EditAction (Modal) agar tidak redirect ke halaman lain
+                // Gunakan EditAction (Modal) agar tidak redirect ke halaman lain
                 \Filament\Tables\Actions\EditAction::make('upload_bukti')
                     ->label(fn (Tagihan $record) => 
                         ($record->created_at->addHours(24)->isPast()) ? 'Kadaluwarsa' : 'Bayar'
@@ -126,7 +120,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                     )
                     ->modalHeading('Upload Bukti Pembayaran')
                     ->form([
-                        FileUpload::make('bukti_bayar')
+                        FileUpload::make('bukti_bayar') // <--- Sekarang FileUpload sudah diimport
                             ->label('Foto Struk Transfer')
                             ->disk('uploads')
                             ->directory('bukti-bayar')
