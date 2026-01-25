@@ -21,6 +21,7 @@ use App\Models\Paket;
 use App\Models\Rekening;
 use App\Models\Tagihan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon; // Import Carbon
 
 class MemberPage extends Page implements HasForms, HasActions, HasTable
 {
@@ -59,26 +60,43 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                 TextColumn::make('paket.nama_paket')->label('Paket'),
                 TextColumn::make('jumlah_bayar')->money('IDR')->label('Total'),
                 
-                // LOGIKA STATUS DINAMIS (Tanpa Cron Job)
                 TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (Tagihan $record) => 
-                        // Jika pending lebih dari 24 jam, tampilkan "Kadaluwarsa"
                         ($record->status === 'pending' && $record->created_at->addHours(24)->isPast()) 
                             ? 'Kadaluwarsa' 
                             : ucfirst($record->status)
                     )
                     ->color(fn (Tagihan $record) => match (true) {
-                        // Prioritas 1: Cek Kedaluwarsa
                         $record->status === 'pending' && $record->created_at->addHours(24)->isPast() => 'gray',
-                        // Prioritas 2: Status asli
                         $record->status === 'pending' => 'warning',
                         $record->status === 'paid' => 'success',
                         $record->status === 'rejected' => 'danger',
                         default => 'gray',
                     }),
 
-                TextColumn::make('created_at')->date('d M Y')->label('Tanggal'),
+                // Kolom Tanggal Pembuatan (Dengan Jam)
+                TextColumn::make('created_at')
+                    ->dateTime('d M Y H:i')
+                    ->label('Dibuat Tanggal')
+                    ->sortable(),
+
+                // KOLOM BARU: ESTIMASI MASA AKTIF
+                TextColumn::make('valid_until')
+                    ->label('Berlaku Sampai')
+                    ->getStateUsing(function (Tagihan $record) {
+                        // Jika sudah lunas, hitung dari tanggal lunas + durasi paket
+                        if ($record->status === 'paid' && $record->tgl_lunas) {
+                            return Carbon::parse($record->tgl_lunas)
+                                ->addDays($record->paket->durasi_hari)
+                                ->translatedFormat('d M Y H:i');
+                        }
+                        // Jika belum lunas, tampilkan durasi paket saja
+                        return $record->paket->durasi_hari . ' Hari (Belum Aktif)';
+                    })
+                    ->color(fn (Tagihan $record) => $record->status === 'paid' ? 'success' : 'gray')
+                    ->size(TextColumn\TextColumnSize::ExtraSmall),
+
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
             ->actions([
@@ -92,11 +110,9 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                     ->color(fn (Tagihan $record) => 
                         ($record->created_at->addHours(24)->isPast()) ? 'gray' : 'primary'
                     )
-                    // Matikan tombol jika sudah lewat 24 jam
                     ->disabled(fn (Tagihan $record) => 
                         $record->created_at->addHours(24)->isPast()
                     )
-                    // Hapus URL jika expired agar tidak bisa diklik kanan -> open new tab
                     ->url(fn (Tagihan $record) => 
                         $record->created_at->addHours(24)->isPast() ? null : \App\Filament\Resources\TagihanResource::getUrl('edit', ['record' => $record])
                     )
