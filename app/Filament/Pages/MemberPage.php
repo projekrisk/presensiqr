@@ -120,20 +120,3 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
             });
     }
 }
-```
-
----
-
-### 4. Sembunyikan Menu Tagihan Lama (Opsional)
-
-Agar tidak duplikat, Anda bisa menyembunyikan menu "Tagihan" dari sidebar untuk Admin Sekolah (biarkan hanya Super Admin yang melihatnya).
-
-Buka `app/Filament/Resources/TagihanResource.php`, ubah `shouldRegisterNavigation`:
-
-```php
-    public static function shouldRegisterNavigation(): bool
-    {
-        // Hanya Super Admin yang lihat menu Tagihan di sidebar
-        // Admin Sekolah lihat tagihan lewat menu "Member Area"
-        return auth()->check() && auth()->user()->sekolah_id === null;
-    }

@@ -29,14 +29,14 @@ class TagihanResource extends Resource
     protected static ?string $navigationLabel = 'Tagihan & Langganan';
     protected static ?int $navigationSort = 2;
 
-    public static function canViewAny(): bool
+    // --- FITUR: Sembunyikan dari Sidebar Admin Sekolah ---
+    // Admin Sekolah mengakses tagihan lewat menu "Member Area"
+    public static function shouldRegisterNavigation(): bool
     {
-        $user = auth()->user();
-        if ($user->sekolah_id === null) return true;
-        return $user->peran === 'admin_sekolah';
+        return auth()->check() && auth()->user()->sekolah_id === null;
     }
 
-    // --- FITUR BARU: Badge Notifikasi Count ---
+    // --- FITUR: Badge Notifikasi Count ---
     public static function getNavigationBadge(): ?string
     {
         if (!auth()->check()) return null;
@@ -54,16 +54,13 @@ class TagihanResource extends Resource
 
         $count = $query->count();
         
-        // Tampilkan badge jika ada tagihan pending
         return $count > 0 ? (string) $count : null;
     }
     
-    // Warna badge merah untuk menarik perhatian
     public static function getNavigationBadgeColor(): ?string
     {
         return 'danger';
     }
-    // ------------------------------------------
 
     public static function form(Form $form): Form
     {
