@@ -3,31 +3,56 @@
         @php
             $qrData = $record->qr_code_data;
             
-            // 1. Ambil Path Logo Sekolah
+            // 1. Logika Pencarian Logo yang Lebih Kuat
             $logoPath = null;
             if ($record->sekolah && $record->sekolah->logo) {
-                 // Pastikan file benar-benar ada di storage
-                 $path = storage_path('app/public/' . $record->sekolah->logo);
-                 if (file_exists($path)) {
-                     $logoPath = $path;
-                 }
+                $filename = $record->sekolah->logo;
+
+                // Cek di disk 'uploads' (Prioritas utama sesuai konfigurasi kita)
+                try {
+                    if (\Illuminate\Support\Facades\Storage::disk('uploads')->exists($filename)) {
+                        $logoPath = \Illuminate\Support\Facades\Storage::disk('uploads')->path($filename);
+                    }
+                    // Cek di disk 'public' (Cadangan)
+                    elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($filename)) {
+                        $logoPath = \Illuminate\Support\Facades\Storage::disk('public')->path($filename);
+                    }
+                } catch (\Exception $e) {
+                    // Abaikan error jika disk tidak ditemukan, lanjut ke cek manual
+                }
+
+                // Cek Manual (Hardcheck) jika Storage Facade gagal
+                if (!$logoPath) {
+                    if (file_exists(public_path('uploads/' . $filename))) {
+                        $logoPath = public_path('uploads/' . $filename);
+                    } elseif (file_exists(storage_path('app/public/' . $filename))) {
+                        $logoPath = storage_path('app/public/' . $filename);
+                    }
+                }
             }
 
             // 2. Generate QR Code
-            if ($logoPath) {
+            if ($logoPath && file_exists($logoPath)) {
                 // JIKA ADA LOGO: Gunakan format PNG dan Merge
-                // errorCorrection('H') (High) sangat penting agar QR tetap bisa discan meski tertutup logo
-                $pngData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
-                            ->size(300)
-                            ->margin(1)
-                            ->errorCorrection('H') 
-                            ->merge($logoPath, 0.3, true) // 0.3 = Logo menempati 30% area QR
-                            ->generate($qrData);
-                            
-                // Encode ke Base64 agar bisa tampil di img tag
-                $src = 'data:image/png;base64,' . base64_encode($pngData);
+                try {
+                    $pngData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                                ->size(300)
+                                ->margin(1)
+                                ->errorCorrection('H') // High error correction
+                                ->merge($logoPath, 0.3, true) // 0.3 = 30% ukuran, true = absolute path
+                                ->generate($qrData);
+                                
+                    $src = 'data:image/png;base64,' . base64_encode($pngData);
+                } catch (\Exception $e) {
+                    // Jika merge gagal (misal format gambar tidak support), fallback ke QR biasa
+                    $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
+                                ->size(300)
+                                ->margin(1)
+                                ->generate($qrData);
+                    $src = 'data:image/svg+xml;base64,' . base64_encode($svgData);
+                }
             } else {
-                // JIKA TIDAK ADA LOGO: Fallback ke SVG (Lebih tajam)
+                // JIKA TIDAK ADA LOGO: Fallback ke SVG
                 $svgData = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('svg')
                             ->size(300)
                             ->margin(1)
