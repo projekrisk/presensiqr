@@ -4,89 +4,106 @@
         ->where('status', 'pending')
         ->latest()
         ->first();
+    
+    $paket = $sekolah->paket_langganan ?? 'free';
+    $isPro = $paket !== 'free';
 @endphp
 
-<div class="grid md:grid-cols-2 gap-6 p-4">
-    <!-- Status Saat Ini -->
-    <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm flex flex-col justify-between">
-        <div>
-            <h3 class="text-lg font-bold text-gray-500 dark:text-gray-400 mb-4">Status Langganan</h3>
-            
-            @php
-                $paket = $sekolah->paket_langganan ?? 'free';
-                // Konfigurasi tampilan berdasarkan paket
-                $config = match($paket) {
-                    'pro' => [
-                        'icon' => 'heroicon-m-star',
-                        'bg' => 'bg-success-50 dark:bg-success-900/20',
-                        'border' => 'border-success-200 dark:border-success-800',
-                        'text' => 'text-success-700 dark:text-success-400',
-                    ],
-                    'basic' => [
-                        'icon' => 'heroicon-m-sparkles',
-                        'bg' => 'bg-info-50 dark:bg-info-900/20',
-                        'border' => 'border-info-200 dark:border-info-800',
-                        'text' => 'text-info-700 dark:text-info-400',
-                    ],
-                    default => [
-                        'icon' => 'heroicon-m-check-circle',
-                        'bg' => 'bg-gray-50 dark:bg-gray-800',
-                        'border' => 'border-gray-200 dark:border-gray-700',
-                        'text' => 'text-gray-700 dark:text-gray-400',
-                    ],
-                };
-                $label = ucfirst($paket);
-            @endphp
+<div class="grid md:grid-cols-3 gap-6 p-4">
+    <!-- KARTU STATUS (Lebar 2 Kolom) -->
+    <div class="md:col-span-2 relative overflow-hidden rounded-2xl border shadow-md {{ $isPro ? 'border-primary-500' : 'border-gray-200 dark:border-gray-700' }}">
+        
+        <!-- Background Gradient -->
+        <div class="absolute inset-0 {{ $isPro ? 'bg-gradient-to-br from-primary-600 to-primary-800' : 'bg-white dark:bg-gray-900' }} z-0"></div>
+        
+        <!-- Dekorasi Circle (Hanya untuk Pro) -->
+        @if($isPro)
+            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-3xl"></div>
+            <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 rounded-full bg-black/10 blur-2xl"></div>
+        @endif
 
-            <!-- Card Paket Aktif -->
-            <div class="flex items-center gap-4 p-4 rounded-lg border {{ $config['bg'] }} {{ $config['border'] }} mb-4">
-                <div class="p-2 rounded-full bg-white dark:bg-gray-900 shadow-sm">
-                    <x-filament::icon
-                        :icon="$config['icon']"
-                        class="h-6 w-6 {{ $config['text'] }}"
+        <div class="relative z-10 p-8 flex flex-col h-full justify-between">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm font-semibold tracking-wider uppercase mb-1 {{ $isPro ? 'text-primary-100' : 'text-gray-500 dark:text-gray-400' }}">
+                        Paket Aktif Saat Ini
+                    </p>
+                    <h2 class="text-3xl font-black {{ $isPro ? 'text-white' : 'text-gray-900 dark:text-white' }}">
+                        {{ ucfirst($paket) }} Plan
+                    </h2>
+                </div>
+                <!-- Icon Badge -->
+                <div class="p-3 rounded-xl {{ $isPro ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-800' }}">
+                    <x-filament::icon 
+                        icon="{{ $isPro ? 'heroicon-m-star' : 'heroicon-m-sparkles' }}" 
+                        class="w-8 h-8" 
                     />
                 </div>
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider {{ $config['text'] }} opacity-80">Paket Anda</p>
-                    <h2 class="text-2xl font-black {{ $config['text'] }}">{{ $label }} Plan</h2>
+            </div>
+
+            <div class="mt-8 pt-6 border-t {{ $isPro ? 'border-white/20' : 'border-gray-100 dark:border-gray-800' }}">
+                <div class="flex items-center gap-2">
+                    <x-filament::icon icon="heroicon-m-calendar" class="w-5 h-5 {{ $isPro ? 'text-primary-200' : 'text-gray-400' }}"/>
+                    <span class="text-sm font-medium {{ $isPro ? 'text-primary-50' : 'text-gray-600 dark:text-gray-300' }}">
+                        Masa Aktif: 
+                        @if($sekolah->tgl_berakhir_langganan)
+                            <span class="font-bold">{{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->translatedFormat('d F Y') }}</span>
+                            ({{ \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->diffForHumans() }})
+                        @else
+                            <span class="font-bold">Selamanya (Mode Trial)</span>
+                        @endif
+                    </span>
                 </div>
             </div>
-        </div>
-
-        <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Berlaku sampai: <br>
-                <span class="text-gray-900 dark:text-white font-medium text-lg">
-                    {{ $sekolah->tgl_berakhir_langganan ? \Carbon\Carbon::parse($sekolah->tgl_berakhir_langganan)->translatedFormat('d F Y') : 'Selamanya (Trial)' }}
-                </span>
-            </p>
         </div>
     </div>
 
-    <!-- Opsi Upgrade / Status Tagihan -->
-    <div class="bg-primary-50 dark:bg-primary-900/10 border border-primary-200 dark:border-primary-800 rounded-xl p-6 flex flex-col justify-center items-center text-center">
+    <!-- KARTU ACTION (Lebar 1 Kolom) -->
+    <div class="md:col-span-1 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 flex flex-col justify-center items-center text-center">
         @if($tagihanPending)
-            <!-- Jika ada tagihan pending -->
-            <div class="p-3 bg-warning-100 dark:bg-warning-900/30 rounded-full mb-3">
-                <x-filament::icon icon="heroicon-o-clock" class="w-8 h-8 text-warning-600 dark:text-warning-400" />
+            <!-- STATUS: MENUNGGU PEMBAYARAN -->
+            <div class="w-16 h-16 bg-warning-100 dark:bg-warning-900/30 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                <x-filament::icon icon="heroicon-m-clock" class="w-8 h-8 text-warning-600" />
             </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Menunggu Pembayaran</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                Invoice <strong>{{ $tagihanPending->nomor_invoice }}</strong> belum dibayar.
-            </p>
-            <x-filament::button :href="\App\Filament\Resources\TagihanResource::getUrl('index')" tag="a" color="warning" class="w-full">
-                Lihat Tagihan & Upload Bukti
-            </x-filament::button>
-        @else
-            <!-- Jika tidak ada tagihan -->
-            <div class="p-3 bg-primary-100 dark:bg-primary-900/30 rounded-full mb-3">
-                <x-filament::icon icon="heroicon-o-rocket-launch" class="w-8 h-8 text-primary-600 dark:text-primary-400" />
-            </div>
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Upgrade Layanan?</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Dapatkan fitur prioritas support dan backup data harian.</p>
             
-            <x-filament::button wire:click="mountAction('upgradePaket')" class="w-full">
-                Pilih Paket Langganan
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tagihan Pending</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                Invoice #{{ $tagihanPending->nomor_invoice }} menunggu pembayaran.
+            </p>
+            
+            <x-filament::button :href="\App\Filament\Resources\TagihanResource::getUrl('index')" tag="a" color="warning" class="w-full">
+                Bayar Sekarang
+            </x-filament::button>
+
+        @elseif(!$isPro)
+            <!-- STATUS: FREE (TAWARKAN UPGRADE) -->
+            <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-4">
+                <x-filament::icon icon="heroicon-m-rocket-launch" class="w-8 h-8 text-primary-600" />
+            </div>
+            
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Upgrade ke Pro</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                Dapatkan fitur backup otomatis & support prioritas.
+            </p>
+            
+            <!-- Tombol Trigger Action -->
+            <x-filament::button wire:click="mountAction('upgradePaket')" class="w-full shadow-lg shadow-primary-500/30">
+                Upgrade Sekarang
+            </x-filament::button>
+
+        @else
+            <!-- STATUS: SUDAH PRO -->
+            <div class="w-16 h-16 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center mb-4">
+                <x-filament::icon icon="heroicon-m-shield-check" class="w-8 h-8 text-success-600" />
+            </div>
+            
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Akun Premium</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                Sekolah Anda menikmati layanan terbaik kami.
+            </p>
+            
+            <x-filament::button color="gray" class="w-full" disabled>
+                Perpanjang Nanti
             </x-filament::button>
         @endif
     </div>
