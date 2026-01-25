@@ -25,22 +25,26 @@ class SidebarSubscriptionWidget extends Component implements HasForms, HasAction
         return view('livewire.sidebar-subscription-widget');
     }
 
-    // Logic: Hanya tampilkan jika user adalah Admin Sekolah
     public function shouldRender(): bool
     {
         $user = Auth::user();
+        // Tampilkan hanya untuk Admin Sekolah
         return $user && $user->sekolah_id !== null && $user->peran === 'admin_sekolah';
     }
 
-    // --- ACTION: UPGRADE PAKET (Popup) ---
+    // --- ACTION: UPGRADE PAKET (Popup Modal) ---
     public function upgradeAction(): Action
     {
         return Action::make('upgrade')
-            ->label('Upgrade')
+            ->label('Upgrade Paket')
             ->color('primary')
-            ->size('xs') // Ukuran tombol kecil
-            ->button() // Tipe tombol
+            ->size('sm')
+            ->button()
+            // Konfigurasi Modal
             ->modalHeading('Upgrade Paket Langganan')
+            ->modalDescription('Pilih paket premium untuk fitur lebih lengkap.')
+            ->modalSubmitActionLabel('Buat Tagihan')
+            ->modalWidth('md')
             ->form([
                 Select::make('paket_id')
                     ->label('Pilih Paket')
@@ -66,9 +70,13 @@ class SidebarSubscriptionWidget extends Component implements HasForms, HasAction
                     'status' => 'pending',
                 ]);
 
-                Notification::make()->success()->title('Invoice Dibuat')->send();
+                Notification::make()
+                    ->success()
+                    ->title('Invoice Berhasil Dibuat')
+                    ->body('Silakan cek menu Tagihan untuk melakukan pembayaran.')
+                    ->send();
                 
-                // Redirect ke menu Tagihan
+                // Redirect ke menu Tagihan agar user bisa langsung bayar
                 return redirect()->to(\App\Filament\Resources\TagihanResource::getUrl('index'));
             });
     }
