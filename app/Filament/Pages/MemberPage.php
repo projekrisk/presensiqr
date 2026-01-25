@@ -84,7 +84,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
 
                 // KOLOM INFORMASI / DEADLINE
                 TextColumn::make('info_waktu')
-                    ->label(fn (Tagihan $record) => $record->status === 'paid' ? 'Berlaku Sampai' : 'Batas Pembayaran')
+                    ->label('Batas Waktu / Masa Aktif') // PERBAIKAN: Label harus statis, tidak boleh pakai fn($record)
                     ->getStateUsing(function (Tagihan $record) {
                         // KASUS 1: Sudah Lunas -> Tampilkan Kapan Paket Berakhir
                         if ($record->status === 'paid' && $record->tgl_lunas) {
