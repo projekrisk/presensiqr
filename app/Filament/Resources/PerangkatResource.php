@@ -44,7 +44,8 @@ class PerangkatResource extends Resource
                             ->preload()
                             ->required()
                             ->label('Milik Sekolah')
-                            ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null),
+                            ->hidden(fn () => auth()->check() && auth()->user()->sekolah_id !== null)
+                            ->default(fn () => auth()->user()->sekolah_id),
                         
                         TextInput::make('nama_device')
                             ->required()
@@ -54,8 +55,30 @@ class PerangkatResource extends Resource
                         TextInput::make('device_id_hash')
                             ->label('Device ID (Salin dari HP)')
                             ->required()
-                            ->unique(ignoreRecord: true)
-                            ->dehydrateStateUsing(fn ($state) => hash('sha256', $state)) // Hashing otomatis
+                            // PERBAIKAN: Ganti unique() bawaan dengan Custom Rule
+                            // Agar sistem mengecek HASH-nya, bukan teks mentahnya
+                            ->rules([
+                                function ($record) {
+                                    return function (string $attribute, $value, \Closure $fail) use ($record) {
+                                        // 1. Hash dulu input dari user
+                                        $hashedValue = hash('sha256', $value);
+                                        
+                                        // 2. Cek apakah hash tersebut sudah ada di database
+                                        $query = Perangkat::where('device_id_hash', $hashedValue);
+                                        
+                                        // Jika sedang edit ($record ada), kecualikan data diri sendiri
+                                        if ($record) {
+                                            $query->where('id', '!=', $record->id);
+                                        }
+
+                                        // 3. Jika ada, gagalkan validasi
+                                        if ($query->exists()) {
+                                            $fail('Perangkat dengan ID ini sudah terdaftar di sekolah lain atau sudah ada.');
+                                        }
+                                    };
+                                }
+                            ])
+                            ->dehydrateStateUsing(fn ($state) => hash('sha256', $state))
                             ->helperText('Paste ID yang muncul di layar HP. Sistem akan otomatis mengenkripsinya.'),
                             
                         Toggle::make('status_aktif')
