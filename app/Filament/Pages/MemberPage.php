@@ -89,26 +89,58 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
             ->color('primary')
             ->icon('heroicon-o-sparkles')
             ->modalHeading('Upgrade ke Akun Premium')
-            ->modalDescription('Dapatkan akses penuh selama 1 tahun dengan prioritas dukungan teknis.')
+            // Deskripsi modal dihapus agar tidak duplikat dengan konten form
             ->modalSubmitActionLabel('Buat Tagihan')
             ->form([
-                // Tampilkan Info Paket (Read Only)
-                Placeholder::make('info_paket')
-                    ->label('Paket Pilihan')
-                    ->content(fn () => $paketPremium ? "{$paketPremium->nama_paket} - Rp " . number_format($paketPremium->harga, 0, ',', '.') : 'Paket Tidak Tersedia'),
+                // 1. Tampilan Info Paket Besar & Jelas
+                Placeholder::make('detail_paket')
+                    ->hiddenLabel()
+                    ->content(fn () => new \Illuminate\Support\HtmlString("
+                        <div class='text-center p-6 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700'>
+                            <p class='text-xs font-bold text-gray-500 uppercase tracking-widest mb-2'>Paket Pilihan</p>
+                            <h2 class='text-2xl font-black text-primary-600 dark:text-primary-400'>
+                                " . ($paketPremium ? $paketPremium->nama_paket : 'Tidak Tersedia') . "
+                            </h2>
+                            <div class='mt-2 flex justify-center items-baseline gap-1'>
+                                <span class='text-4xl font-extrabold text-gray-900 dark:text-white'>
+                                    Rp " . number_format($paketPremium?->harga ?? 0, 0, ',', '.') . "
+                                </span>
+                                <span class='text-sm text-gray-500'>/ Tahun</span>
+                            </div>
+                        </div>
+                    ")),
 
                 // Hidden Input untuk ID Paket
                 Hidden::make('paket_id')
                     ->default($paketPremium?->id),
                     
-                // Pilihan Bank
+                // 2. Pilihan Bank
                 Select::make('rekening_id')
                     ->label('Metode Pembayaran (Transfer Bank)')
                     ->options(Rekening::where('is_active', true)->get()->mapWithKeys(function ($item) {
                         return [$item->id => "{$item->nama_bank} - {$item->nomor_rekening} (a.n {$item->atas_nama})"];
                     }))
                     ->required()
-                    ->native(false),
+                    ->native(false)
+                    ->prefixIcon('heroicon-m-building-library'),
+
+                // 3. Panduan Langkah Pembayaran
+                Placeholder::make('panduan')
+                    ->hiddenLabel()
+                    ->content(new \Illuminate\Support\HtmlString("
+                        <div class='mt-2 p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-200 dark:border-yellow-800'>
+                            <h4 class='font-bold text-yellow-700 dark:text-yellow-500 flex items-center gap-2 mb-2'>
+                                <svg class='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>
+                                Instruksi Pembayaran:
+                            </h4>
+                            <ol class='list-decimal list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 ml-1'>
+                                <li>Pilih <strong>Bank Tujuan</strong> di atas.</li>
+                                <li>Klik tombol <strong>Buat Tagihan</strong> untuk memproses invoice.</li>
+                                <li>Lakukan transfer sejumlah nominal ke rekening tersebut.</li>
+                                <li>Upload bukti transfer pada menu <strong>Riwayat Tagihan</strong> di bawah ini.</li>
+                            </ol>
+                        </div>
+                    ")),
             ])
             ->action(function (array $data) use ($paketPremium) {
                 if (!$paketPremium) {
@@ -126,7 +158,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                     'status' => 'pending',
                 ]);
                 
-                Notification::make()->success()->title('Invoice Berhasil Dibuat')->send();
+                Notification::make()->success()->title('Invoice Berhasil Dibuat')->body('Silakan upload bukti pembayaran pada tabel di bawah.')->send();
                 
                 // Refresh halaman untuk melihat invoice baru di tabel
                 return redirect()->route('filament.admin.pages.member-area');
