@@ -75,27 +75,47 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                         default => 'gray',
                     }),
 
-                // Kolom Tanggal Pembuatan (Dengan Jam)
+                // Kolom Tanggal Pembuatan (Dengan Timezone Jakarta)
                 TextColumn::make('created_at')
                     ->dateTime('d M Y H:i')
+                    ->timezone('Asia/Jakarta') // Fix Jam agar sesuai WIB
                     ->label('Dibuat Tanggal')
                     ->sortable(),
 
-                // KOLOM BARU: ESTIMASI MASA AKTIF
-                TextColumn::make('valid_until')
-                    ->label('Berlaku Sampai')
+                // KOLOM INFORMASI / DEADLINE
+                TextColumn::make('info_waktu')
+                    ->label(fn (Tagihan $record) => $record->status === 'paid' ? 'Berlaku Sampai' : 'Batas Pembayaran')
                     ->getStateUsing(function (Tagihan $record) {
-                        // Jika sudah lunas, hitung dari tanggal lunas + durasi paket
+                        // KASUS 1: Sudah Lunas -> Tampilkan Kapan Paket Berakhir
                         if ($record->status === 'paid' && $record->tgl_lunas) {
                             return Carbon::parse($record->tgl_lunas)
                                 ->addDays($record->paket->durasi_hari)
-                                ->translatedFormat('d M Y H:i');
+                                ->translatedFormat('d M Y');
                         }
-                        // Jika belum lunas, tampilkan durasi paket saja
-                        return $record->paket->durasi_hari . ' Hari (Belum Aktif)';
+                        
+                        // KASUS 2: Pending -> Tampilkan Deadline Pembayaran (Created + 24 Jam)
+                        if ($record->status === 'pending') {
+                            $deadline = $record->created_at->addHours(24);
+                            
+                            if ($deadline->isPast()) {
+                                return 'Invoice Kadaluwarsa';
+                            }
+                            
+                            // Hitung sisa waktu
+                            return $deadline->timezone('Asia/Jakarta')->format('d M Y H:i') 
+                                . ' (' . $deadline->diffForHumans() . ')';
+                        }
+                        
+                        // KASUS 3: Batal/Ditolak
+                        return 'Tidak Berlaku';
                     })
-                    ->color(fn (Tagihan $record) => $record->status === 'paid' ? 'success' : 'gray')
-                    ->size(TextColumn\TextColumnSize::ExtraSmall),
+                    ->color(fn (Tagihan $record) => match($record->status) {
+                        'paid' => 'success',
+                        'pending' => $record->created_at->addHours(24)->isPast() ? 'gray' : 'danger', // Merah agar diperhatikan
+                        default => 'gray',
+                    })
+                    ->size(TextColumn\TextColumnSize::ExtraSmall)
+                    ->wrap(), // Agar teks panjang turun ke bawah
 
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
