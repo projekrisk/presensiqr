@@ -14,17 +14,28 @@ class CheckSchoolSubscription
     {
         $user = Auth::user();
 
-        // 1. Cek apakah user adalah Admin Sekolah
-        if ($user && $user->sekolah_id && $user->peran === 'admin_sekolah') {
+        // 1. Cek apakah user adalah User Sekolah (Admin Sekolah ATAU Guru)
+        // PERBAIKAN: Tambahkan 'guru' ke dalam array pengecekan
+        if ($user && $user->sekolah_id && in_array($user->peran, ['admin_sekolah', 'guru'])) {
             
+            // Ambil data terbaru dari DB untuk menghindari cache session lama
+            $sekolah = $user->sekolah->refresh();
+
             // 2. Cek apakah langganan aktif
-            if (!$user->sekolah->isSubscriptionActive()) {
+            if (!$sekolah->isSubscriptionActive()) {
                 
-                // 3. Cek apakah dia sedang membuka halaman Member Area?
-                // Kita izinkan akses ke Member Area agar dia bisa bayar/upgrade
-                // Ganti 'member-area' sesuai slug page Anda
+                // Jika Guru: Langsung abort 403 (Karena guru tidak punya akses Member Area untuk bayar)
+                if ($user->peran === 'guru') {
+                     // Kecuali logout
+                     if ($request->routeIs('filament.admin.auth.logout')) return $next($request);
+                     
+                     abort(403, 'Masa aktif sekolah berakhir. Hubungi Admin Sekolah.');
+                }
+
+                // Jika Admin Sekolah: Redirect ke Member Area untuk bayar
+                // Izinkan akses ke halaman Member Area dan Logout
                 if (!$request->routeIs('filament.admin.pages.member-area') && 
-                    !$request->routeIs('filament.admin.auth.logout')) { // Izinkan logout juga
+                    !$request->routeIs('filament.admin.auth.logout')) {
                     
                     Notification::make()
                         ->warning()
@@ -33,7 +44,6 @@ class CheckSchoolSubscription
                         ->persistent()
                         ->send();
 
-                    // Redirect paksa ke Member Area
                     return redirect()->route('filament.admin.pages.member-area');
                 }
             }
