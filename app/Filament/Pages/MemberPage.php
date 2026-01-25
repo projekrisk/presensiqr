@@ -75,16 +75,11 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                         default => 'gray',
                     }),
 
-                // Kolom Tanggal Pembuatan (Dengan Timezone Jakarta)
-                TextColumn::make('created_at')
-                    ->dateTime('d M Y H:i')
-                    ->timezone('Asia/Jakarta') // Fix Jam agar sesuai WIB
-                    ->label('Dibuat Tanggal')
-                    ->sortable(),
+                // KOLOM DIBUAT TANGGAL DIHAPUS (Sesuai Permintaan)
 
                 // KOLOM INFORMASI / DEADLINE
                 TextColumn::make('info_waktu')
-                    ->label('Batas Waktu / Masa Aktif') // PERBAIKAN: Label harus statis, tidak boleh pakai fn($record)
+                    ->label('Batas Waktu / Masa Aktif') 
                     ->getStateUsing(function (Tagihan $record) {
                         // KASUS 1: Sudah Lunas -> Tampilkan Kapan Paket Berakhir
                         if ($record->status === 'paid' && $record->tgl_lunas) {
@@ -93,7 +88,7 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                                 ->translatedFormat('d M Y');
                         }
                         
-                        // KASUS 2: Pending -> Tampilkan Deadline Pembayaran (Created + 24 Jam)
+                        // KASUS 2: Pending -> Tampilkan Deadline Pembayaran
                         if ($record->status === 'pending') {
                             $deadline = $record->created_at->addHours(24);
                             
@@ -101,9 +96,9 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                                 return 'Invoice Kadaluwarsa';
                             }
                             
-                            // Hitung sisa waktu
-                            return $deadline->timezone('Asia/Jakarta')->format('d M Y H:i') 
-                                . ' (' . $deadline->diffForHumans() . ')';
+                            // PERBAIKAN: Hapus diffForHumans (jam dari sekarang)
+                            // Hanya tampilkan Tanggal dan Jam absolut
+                            return $deadline->timezone('Asia/Jakarta')->format('d M Y H:i'); 
                         }
                         
                         // KASUS 3: Batal/Ditolak
@@ -111,31 +106,42 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
                     })
                     ->color(fn (Tagihan $record) => match($record->status) {
                         'paid' => 'success',
-                        'pending' => $record->created_at->addHours(24)->isPast() ? 'gray' : 'danger', // Merah agar diperhatikan
+                        'pending' => $record->created_at->addHours(24)->isPast() ? 'gray' : 'danger', 
                         default => 'gray',
                     })
                     ->size(TextColumn\TextColumnSize::ExtraSmall)
-                    ->wrap(), // Agar teks panjang turun ke bawah
+                    ->wrap(),
 
                 ImageColumn::make('bukti_bayar')->disk('uploads')->circular(),
             ])
             ->actions([
-                \Filament\Tables\Actions\Action::make('bayar')
+                // PERBAIKAN: Gunakan EditAction (Modal) agar tidak redirect ke halaman lain
+                \Filament\Tables\Actions\EditAction::make('upload_bukti')
                     ->label(fn (Tagihan $record) => 
-                        ($record->created_at->addHours(24)->isPast()) ? 'Kadaluwarsa' : 'Bayar / Upload'
+                        ($record->created_at->addHours(24)->isPast()) ? 'Kadaluwarsa' : 'Bayar'
                     )
-                    ->icon(fn (Tagihan $record) => 
-                        ($record->created_at->addHours(24)->isPast()) ? 'heroicon-o-x-circle' : 'heroicon-o-credit-card'
-                    )
+                    ->icon('heroicon-o-credit-card')
                     ->color(fn (Tagihan $record) => 
                         ($record->created_at->addHours(24)->isPast()) ? 'gray' : 'primary'
                     )
+                    ->modalHeading('Upload Bukti Pembayaran')
+                    ->form([
+                        FileUpload::make('bukti_bayar')
+                            ->label('Foto Struk Transfer')
+                            ->disk('uploads')
+                            ->directory('bukti-bayar')
+                            ->image()
+                            ->imageEditor()
+                            ->required(),
+                    ])
                     ->disabled(fn (Tagihan $record) => 
                         $record->created_at->addHours(24)->isPast()
                     )
-                    ->url(fn (Tagihan $record) => 
-                        $record->created_at->addHours(24)->isPast() ? null : \App\Filament\Resources\TagihanResource::getUrl('edit', ['record' => $record])
-                    )
+                    ->visible(fn (Tagihan $record) => $record->status === 'pending'),
+                
+                // Tambahkan Tombol Hapus (Hanya jika pending)
+                \Filament\Tables\Actions\DeleteAction::make()
+                    ->label('Batal')
                     ->visible(fn (Tagihan $record) => $record->status === 'pending'),
             ]);
     }
