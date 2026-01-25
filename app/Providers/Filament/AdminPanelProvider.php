@@ -28,20 +28,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             
-            // --- PENGATURAN BRANDING ---
-            ->brandName('SIPQR Admin') 
-            ->favicon(asset('favicon.png')) 
+            // --- BRANDING ---
+            ->brandName('SIPQR Admin')
+            ->favicon(asset('favicon.png'))
             ->brandLogo(asset('favicon.png'))
             ->brandLogoHeight('3rem')
-            // ---------------------------
-
-            // [HAPUS BAGIAN INI] renderHook untuk sidebar widget dihapus karena sudah diganti MemberPage
-            /*
-            ->renderHook(
-                PanelsRenderHook::SIDEBAR_NAV_END,
-                fn () => Blade::render('@livewire(\'sidebar-subscription-widget\')')
-            )
-            */
+            // ----------------
 
             ->colors([
                 'primary' => Color::Blue,
@@ -65,6 +57,10 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                
+                // --- MIDDLEWARE CEK LANGGANAN ---
+                // Mencegah Admin Sekolah mengakses menu selain Member Area jika expired
+                \App\Http\Middleware\CheckSchoolSubscription::class, 
             ])
             ->authMiddleware([
                 Authenticate::class,

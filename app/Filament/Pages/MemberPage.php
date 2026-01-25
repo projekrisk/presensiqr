@@ -150,6 +150,19 @@ class MemberPage extends Page implements HasForms, HasActions, HasTable
             ->label('Upgrade Paket')
             ->color('primary')
             ->icon('heroicon-o-sparkles')
+            
+            // --- LOGIKA VISIBILITAS (BARU) ---
+            // Tombol hanya muncul jika paket masih 'free' ATAU sudah kadaluwarsa
+            ->visible(function() {
+                $sekolah = Auth::user()->sekolah;
+                
+                $isFree = ($sekolah->paket_langganan ?? 'free') === 'free';
+                $isExpired = $sekolah->tgl_berakhir_langganan && now()->greaterThan($sekolah->tgl_berakhir_langganan);
+                
+                return $isFree || $isExpired;
+            })
+            // ---------------------------------
+            
             ->modalHeading('Upgrade ke Akun Premium')
             ->modalSubmitActionLabel('Buat Tagihan')
             ->form([

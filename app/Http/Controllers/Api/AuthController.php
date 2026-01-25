@@ -17,13 +17,23 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        // Load user beserta data sekolahnya untuk ambil logo
+        // Load user beserta data sekolah
         $user = User::with('sekolah')->where('email', $request->email)->first();
 
+        // 1. Cek Kredensial
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json(['success' => false, 'message' => 'Login Gagal'], 401);
         }
 
+        // 2. Cek Masa Aktif Sekolah (Fitur Langganan)
+        if ($user->sekolah && !$user->sekolah->isSubscriptionActive()) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Masa aktif sekolah telah berakhir. Hubungi Admin Sekolah.'
+            ], 403);
+        }
+
+        // 3. Buat Token
         $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -35,8 +45,6 @@ class AuthController extends Controller
             'user' => $user,
             'logo' => $user->sekolah ? $user->sekolah->logo : null,
             'school_name' => $user->sekolah ? $user->sekolah->nama_sekolah : 'Sekolah Tidak Diketahui',
-            
-            // TAMBAHAN: Kirim URL Foto Guru
             'user_photo' => $user->foto, 
         ]);
     }
@@ -49,8 +57,17 @@ class AuthController extends Controller
 
         $perangkat = Perangkat::with('sekolah')->where('device_id_hash', $hashedId)->first();
 
+        // 1. Cek Perangkat Terdaftar & Aktif
         if (! $perangkat || ! $perangkat->status_aktif) {
             return response()->json(['success' => false, 'message' => 'Perangkat Tidak Terdaftar / Belum Aktif'], 403);
+        }
+
+        // 2. Cek Masa Aktif Sekolah
+        if ($perangkat->sekolah && !$perangkat->sekolah->isSubscriptionActive()) {
+             return response()->json([
+                'success' => false, 
+                'message' => 'Masa aktif sekolah telah berakhir. Hubungi Admin.'
+            ], 403);
         }
 
         return response()->json([
@@ -64,7 +81,7 @@ class AuthController extends Controller
             ],
             'logo' => $perangkat->sekolah ? $perangkat->sekolah->logo : null,
             'school_name' => $perangkat->sekolah ? $perangkat->sekolah->nama_sekolah : 'Sekolah',
-            'user_photo' => null, // Kiosk tidak punya foto profil user
+            'user_photo' => null,
         ]);
     }
 }
