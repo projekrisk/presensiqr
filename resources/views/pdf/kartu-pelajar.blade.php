@@ -5,7 +5,7 @@
     <title>Cetak Kartu Pelajar</title>
     <style>
         @page { margin: 0; size: A4; }
-        body { margin: 0; font-family: 'Helvetica', sans-serif; background: #f0f0f0; }
+        body { margin: 0; font-family: 'Helvetica', sans-serif; background: #e5e7eb; -webkit-print-color-adjust: exact; }
         
         .page-container {
             width: 210mm;
@@ -18,119 +18,151 @@
         }
 
         .card-container {
-            width: 54mm; /* Portrait Width */
-            height: 85.6mm; /* Portrait Height */
-            background: white;
-            border: 1px solid #e5e7eb;
+            width: 54mm; /* Lebar ID Card Standar */
+            height: 85.6mm; /* Tinggi ID Card Standar */
+            background: #ffffff;
+            border: 1px solid #d1d5db; /* Border tipis abu-abu */
             float: left;
             margin: 0 5mm 5mm 0;
             position: relative;
-            border-radius: 8px;
+            border-radius: 8px; /* Sudut membulat */
             overflow: hidden;
             page-break-inside: avoid;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* Header Biru */
-        .card-header {
-            height: 15mm;
-            background: #2563EB;
-            width: 100%;
+        /* Background Dekorasi Atas (Biru Lengkung) */
+        .bg-deco-top {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: -25mm;
+            left: -10mm;
+            width: 74mm;
+            height: 55mm;
+            background: #2563EB; /* Biru Utama */
+            border-radius: 50%;
+            z-index: 0;
+        }
+        
+        /* Konten Kartu */
+        .card-content {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
             text-align: center;
         }
 
-        /* Logo Sekolah (Tengah Atas) */
+        /* Area Logo */
+        .logo-area {
+            margin-top: 5mm;
+            height: 14mm;
+            width: 100%;
+            text-align: center;
+        }
+        
         .school-logo {
-            position: absolute;
-            top: 2mm;
-            left: 50%;
-            transform: translateX(-50%); /* Center horizontal - but DOMPDF has issues with transform, use margin */
-            margin-left: -6mm; /* Half of width */
             width: 12mm;
             height: 12mm;
-            z-index: 10;
             object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 2px;
         }
 
-        /* Nama Sekolah & NPSN (Di bawah Header) */
-        .header-text {
-            margin-top: 16mm;
-            text-align: center;
-            width: 100%;
+        /* Info Sekolah */
+        .school-info {
+            color: white;
+            margin-bottom: 6mm;
             padding: 0 2mm;
         }
-
         .school-name {
-            color: #1E40AF;
             font-size: 8pt;
             font-weight: bold;
             text-transform: uppercase;
-            line-height: 1.1;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
         .school-npsn {
-            color: #6B7280;
             font-size: 6pt;
-            margin-top: 1px;
+            opacity: 0.9;
         }
 
-        /* Konten Utama */
-        .content-area {
-            width: 100%;
-            text-align: center;
+        /* Info Siswa */
+        .student-area {
             margin-top: 4mm;
+            padding: 0 3mm;
         }
-
+        
         .student-name {
             font-size: 11pt;
             font-weight: 800;
             color: #111827;
             text-transform: uppercase;
             margin-bottom: 2mm;
-            padding: 0 2mm;
+            line-height: 1.1;
+            /* Pastikan nama panjang tidak menabrak */
+            max-height: 10mm; 
+            overflow: hidden;
+        }
+        
+        /* Garis Pemisah Kecil */
+        .divider {
+            height: 2px;
+            width: 15mm;
+            background: #F59E0B; /* Orange */
+            margin: 0 auto 3mm auto;
+            border-radius: 1px;
         }
 
-        .info-label {
-            font-size: 6pt;
-            color: #9CA3AF;
+        /* Tabel Detail (NIS/Kelas) */
+        .meta-table {
+            width: 100%;
+            margin-bottom: 2mm;
+            border-collapse: collapse;
+        }
+        .meta-cell {
+            text-align: center;
+            width: 50%;
+            vertical-align: top;
+        }
+        .meta-label {
+            font-size: 5pt;
+            color: #6B7280;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            margin-bottom: 1px;
         }
-
-        .info-value {
+        .meta-value {
             font-size: 9pt;
             font-weight: bold;
             color: #374151;
-            margin-bottom: 3mm;
         }
 
-        /* QR Code Besar di Bawah */
+        /* Area QR Code */
         .qr-area {
-            width: 100%;
-            text-align: center;
             position: absolute;
             bottom: 6mm;
-        }
-
-        .qr-img {
-            width: 32mm; /* Besar dan Jelas */
-            height: 32mm;
-        }
-
-        /* Footer Strip */
-        .footer-strip {
-            position: absolute;
-            bottom: 0;
             left: 0;
             width: 100%;
-            height: 2mm;
-            background: #F59E0B;
+            text-align: center;
+        }
+        .qr-img {
+            width: 28mm;
+            height: 28mm;
+            border: 2px solid white; /* Border putih agar kontras */
+            border-radius: 4px;
+        }
+        
+        .card-footer {
+            position: absolute;
+            bottom: 2mm;
+            width: 100%;
+            text-align: center;
+            font-size: 5pt;
+            color: #9CA3AF;
+            letter-spacing: 1px;
         }
     </style>
 </head>
@@ -138,51 +170,63 @@
     <div class="page-container">
         @foreach($students as $siswa)
             <div class="card-container">
-                <!-- Header Background -->
-                <div class="card-header"></div>
+                <!-- Elemen Dekorasi Background -->
+                <div class="bg-deco-top"></div>
                 
-                <!-- Logo Sekolah (Centered Manual via Margin) -->
-                @php
-                    $logoPath = public_path('images/default-logo.png');
-                    if($siswa->sekolah->logo) {
-                        if(\Illuminate\Support\Facades\Storage::disk('uploads')->exists($siswa->sekolah->logo)) {
-                            $logoPath = \Illuminate\Support\Facades\Storage::disk('uploads')->path($siswa->sekolah->logo);
-                        } elseif(file_exists(public_path('uploads/'.$siswa->sekolah->logo))) {
-                            $logoPath = public_path('uploads/'.$siswa->sekolah->logo);
-                        }
-                    }
-                    $logoBase64 = '';
-                    if(file_exists($logoPath)) {
-                        $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
-                    }
-                @endphp
-                @if($logoBase64)
-                    <img src="{{ $logoBase64 }}" class="school-logo">
-                @endif
-                
-                <!-- Header Text -->
-                <div class="header-text">
-                    <div class="school-name">{{ Str::limit($siswa->sekolah->nama_sekolah, 25) }}</div>
-                    <div class="school-npsn">NPSN: {{ $siswa->sekolah->npsn ?? '-' }}</div>
-                </div>
+                <div class="card-content">
+                    <!-- 1. Logo Sekolah -->
+                    <div class="logo-area">
+                        @php
+                            $logoPath = public_path('images/default-logo.png');
+                            if($siswa->sekolah->logo) {
+                                if(\Illuminate\Support\Facades\Storage::disk('uploads')->exists($siswa->sekolah->logo)) {
+                                    $logoPath = \Illuminate\Support\Facades\Storage::disk('uploads')->path($siswa->sekolah->logo);
+                                } elseif(file_exists(public_path('uploads/'.$siswa->sekolah->logo))) {
+                                    $logoPath = public_path('uploads/'.$siswa->sekolah->logo);
+                                }
+                            }
+                            $logoBase64 = '';
+                            if(file_exists($logoPath)) {
+                                $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+                            }
+                        @endphp
+                        @if($logoBase64)
+                            <img src="{{ $logoBase64 }}" class="school-logo">
+                        @endif
+                    </div>
 
-                <!-- Konten Siswa -->
-                <div class="content-area">
-                    <div class="student-name">{{ Str::limit($siswa->nama_lengkap, 18) }}</div>
+                    <!-- 2. Nama Sekolah -->
+                    <div class="school-info">
+                        <div class="school-name">{{ Str::limit($siswa->sekolah->nama_sekolah, 25) }}</div>
+                        <div class="school-npsn">NPSN: {{ $siswa->sekolah->npsn ?? '-' }}</div>
+                    </div>
+
+                    <!-- 3. Info Siswa -->
+                    <div class="student-area">
+                        <div class="student-name">{{ $siswa->nama_lengkap }}</div>
+                        <div class="divider"></div>
+                        
+                        <table class="meta-table">
+                            <tr>
+                                <td class="meta-cell">
+                                    <div class="meta-label">NIS / NISN</div>
+                                    <div class="meta-value">{{ $siswa->nis ?? '-' }}<br>{{ $siswa->nisn }}</div>
+                                </td>
+                                <td class="meta-cell">
+                                    <div class="meta-label">Kelas</div>
+                                    <div class="meta-value" style="font-size: 11pt;">{{ $siswa->kelas->nama_kelas }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- 4. QR Code -->
+                    <div class="qr-area">
+                        <img src="data:image/png;base64, {{ base64_encode(SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(300)->margin(0)->generate($siswa->qr_code_data)) }}" class="qr-img">
+                    </div>
                     
-                    <div class="info-label">NIS / NISN</div>
-                    <div class="info-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
-
-                    <div class="info-label">KELAS</div>
-                    <div class="info-value">{{ $siswa->kelas->nama_kelas }}</div>
+                    <div class="card-footer">KARTU PRESENSI</div>
                 </div>
-
-                <!-- QR Code -->
-                <div class="qr-area">
-                    <img src="data:image/png;base64, {{ base64_encode(SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(300)->margin(0)->generate($siswa->qr_code_data)) }}" class="qr-img">
-                </div>
-
-                <div class="footer-strip"></div>
             </div>
         @endforeach
     </div>
