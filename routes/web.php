@@ -3,7 +3,6 @@
    use Illuminate\Support\Facades\Route;
    use App\Http\Controllers\RegisterSchoolController;
    use App\Http\Controllers\DownloadTemplateController;
-   use App\Http\Controllers\CetakKartuController;
    use App\Http\Controllers\DownloadQrController; 
 
    // Halaman Depan (Landing Page)
@@ -26,9 +25,6 @@
    });
 
    Route::middleware('auth')->group(function () {
-        // 1. Download Kartu Pelajar (ZIP)
-        Route::get('/cetak-kartu', [CetakKartuController::class, 'cetak'])->name('cetak.kartu');
-        
-        // 2. Download QR Only (ZIP)
-        Route::get('/download-qr', [DownloadQrController::class, 'download'])->name('download.qr');
+        // Route Download ZIP QR
+        Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
     });

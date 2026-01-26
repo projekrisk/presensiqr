@@ -120,26 +120,15 @@ class SiswaResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    
-                    // --- TOMBOL 1: DOWNLOAD KARTU (Desain Lengkap) ---
-                    Tables\Actions\BulkAction::make('cetak_kartu')
-                        ->label('Download Kartu (ZIP)')
-                        ->icon('heroicon-o-identification')
-                        ->color('success')
-                        ->action(function ($records) {
-                            $ids = $records->pluck('id')->implode(',');
-                            return redirect()->route('cetak.kartu', ['ids' => $ids]);
-                        })
-                        ->deselectRecordsAfterCompletion(),
 
-                    // --- TOMBOL 2: DOWNLOAD QR SAJA ---
+                    // --- DOWNLOAD QR ZIP ---
                     Tables\Actions\BulkAction::make('download_qr')
                         ->label('Download QR Code (ZIP)')
-                        ->icon('heroicon-o-qr-code')
+                        ->icon('heroicon-o-archive-box-arrow-down')
                         ->color('warning')
                         ->action(function ($records) {
                             $ids = $records->pluck('id')->implode(',');
-                            return redirect()->route('download.qr', ['ids' => $ids]);
+                            return redirect()->route('download.qr.zip', ['ids' => $ids]);
                         })
                         ->deselectRecordsAfterCompletion()
                 ]),
