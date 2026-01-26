@@ -92,8 +92,49 @@ class JurnalGuruResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([])
-            // --- HEADER ACTION: EXPORT BULANAN ---
+            // --- HEADER ACTIONS (TOMBOL EXPORT DI ATAS) ---
             ->headerActions([
+                // 1. EXPORT HARIAN (Pindahan dari Row)
+                Tables\Actions\Action::make('export_harian')
+                    ->label('Export Harian (Per Kelas)')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->form([
+                        Select::make('kelas_id')
+                            ->label('Kelas')
+                            ->options(fn () => \App\Models\Kelas::where('sekolah_id', auth()->user()->sekolah_id)->pluck('nama_kelas', 'id'))
+                            ->searchable()
+                            ->required(),
+                        DatePicker::make('tanggal')
+                            ->label('Tanggal')
+                            ->default(now())
+                            ->required(),
+                    ])
+                    ->action(function (array $data) {
+                        $query = JurnalGuru::query()
+                            ->where('kelas_id', $data['kelas_id'])
+                            ->whereDate('tanggal', $data['tanggal']);
+                        
+                        // Jika Guru, hanya cari punya sendiri
+                        if (auth()->user()->peran === 'guru') {
+                            $query->where('user_id', auth()->id());
+                        }
+
+                        $jurnal = $query->first();
+
+                        if (!$jurnal) {
+                            \Filament\Notifications\Notification::make()
+                                ->danger()
+                                ->title('Data Tidak Ditemukan')
+                                ->body('Tidak ada data absensi untuk kelas dan tanggal tersebut.')
+                                ->send();
+                            return;
+                        }
+
+                        return redirect()->route('export.jurnal', $jurnal->id);
+                    }),
+
+                // 2. EXPORT BULANAN
                 Tables\Actions\Action::make('export_bulanan')
                     ->label('Export Rekap Bulanan')
                     ->icon('heroicon-o-calendar')
@@ -122,16 +163,6 @@ class JurnalGuruResource extends Resource
             // -------------------------------------
             ->actions([
                 Tables\Actions\EditAction::make()->label('Lihat'),
-                
-                // --- TOMBOL EXPORT HARIAN ---
-                Tables\Actions\Action::make('export_excel')
-                    ->label('Excel')
-                    ->icon('heroicon-o-document-arrow-down')
-                    ->color('success')
-                    ->url(fn (JurnalGuru $record) => route('export.jurnal', $record->id))
-                    ->openUrlInNewTab(),
-                // ---------------------------
-
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
