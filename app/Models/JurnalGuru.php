@@ -16,6 +16,11 @@ class JurnalGuru extends Model
     protected $table = 'jurnal_guru';
     protected $guarded = [];
 
+    // PERBAIKAN: Casting tanggal agar dibaca sebagai Carbon Object
+    protected $casts = [
+        'tanggal' => 'date',
+    ];
+
     protected static function booted()
     {
         static::creating(function ($model) {

@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Carbon\Carbon;
 
 class JurnalAbsensiExport implements FromCollection, WithHeadings, WithMapping, ShouldAutoSize, WithStyles
 {
@@ -22,7 +23,6 @@ class JurnalAbsensiExport implements FromCollection, WithHeadings, WithMapping, 
 
     public function collection()
     {
-        // Ambil detail jurnal beserta data siswa
         return DetailJurnal::with('siswa')
             ->where('jurnal_guru_id', $this->jurnalId)
             ->get();
@@ -30,23 +30,17 @@ class JurnalAbsensiExport implements FromCollection, WithHeadings, WithMapping, 
 
     public function headings(): array
     {
-        // Header Excel
         $jurnal = JurnalGuru::with(['kelas', 'user'])->find($this->jurnalId);
+        // Fix tanggal jika belum dicast di model
+        $tgl = $jurnal->tanggal instanceof Carbon ? $jurnal->tanggal : Carbon::parse($jurnal->tanggal);
         
         return [
-            ['LAPORAN ABSENSI KELAS'],
-            ['Tanggal', $jurnal->tanggal->format('d-m-Y')],
+            ['LAPORAN ABSENSI HARIAN'],
+            ['Tanggal', $tgl->format('d-m-Y')],
             ['Kelas', $jurnal->kelas->nama_kelas],
             ['Guru', $jurnal->user->name],
-            ['Mata Pelajaran', $jurnal->mata_pelajaran],
-            [''], // Baris kosong
-            [
-                'No',
-                'NISN',
-                'Nama Siswa',
-                'Status Kehadiran',
-                'Waktu Input'
-            ]
+            [''], 
+            ['No', 'NISN', 'Nama Siswa', 'Status Kehadiran']
         ];
     }
 
@@ -54,23 +48,19 @@ class JurnalAbsensiExport implements FromCollection, WithHeadings, WithMapping, 
     {
         static $no = 0;
         $no++;
-
         return [
             $no,
             $detail->siswa->nisn ?? '-',
             $detail->siswa->nama_lengkap,
             $detail->status,
-            $detail->created_at->format('H:i'),
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
         return [
-            // Style Judul Utama (Baris 1)
             1 => ['font' => ['bold' => true, 'size' => 14]],
-            // Style Header Kolom (Baris 7)
-            7 => ['font' => ['bold' => true], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFE0E0E0']]],
+            6 => ['font' => ['bold' => true], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFE0E0E0']]],
         ];
     }
 }

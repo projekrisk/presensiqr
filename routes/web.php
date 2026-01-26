@@ -26,7 +26,9 @@
    });
 
    Route::middleware('auth')->group(function () {
-        // Route Download ZIP QR
-        Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
+        // Export Harian
         Route::get('/export-jurnal/{id}', [ExportJurnalController::class, 'export'])->name('export.jurnal');
+        
+        // Export Bulanan (Baru)
+        Route::get('/export-jurnal-bulanan', [ExportJurnalController::class, 'exportBulanan'])->name('export.jurnal.bulanan');
     });
