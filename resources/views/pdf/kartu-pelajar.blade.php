@@ -116,17 +116,6 @@
             border-radius: 1px;
         }
 
-        /* Tabel Detail (NIS/Kelas) */
-        .meta-table {
-            width: 100%;
-            margin-bottom: 2mm;
-            border-collapse: collapse;
-        }
-        .meta-cell {
-            text-align: center;
-            width: 50%;
-            vertical-align: top;
-        }
         .meta-label {
             font-size: 5pt;
             color: #6B7280;
@@ -135,7 +124,7 @@
             margin-bottom: 1px;
         }
         .meta-value {
-            font-size: 9pt;
+            font-size: 10pt;
             font-weight: bold;
             color: #374151;
         }
@@ -143,7 +132,7 @@
         /* Area QR Code */
         .qr-area {
             position: absolute;
-            bottom: 6mm;
+            bottom: 10mm; /* Naik sedikit dari 6mm agar tidak nempel */
             left: 0;
             width: 100%;
             text-align: center;
@@ -201,23 +190,13 @@
                         <div class="school-npsn">NPSN: {{ $siswa->sekolah->npsn ?? '-' }}</div>
                     </div>
 
-                    <!-- 3. Info Siswa -->
+                    <!-- 3. Info Siswa (Tanpa Kelas) -->
                     <div class="student-area">
                         <div class="student-name">{{ $siswa->nama_lengkap }}</div>
                         <div class="divider"></div>
                         
-                        <table class="meta-table">
-                            <tr>
-                                <td class="meta-cell">
-                                    <div class="meta-label">NIS / NISN</div>
-                                    <div class="meta-value">{{ $siswa->nis ?? '-' }}<br>{{ $siswa->nisn }}</div>
-                                </td>
-                                <td class="meta-cell">
-                                    <div class="meta-label">Kelas</div>
-                                    <div class="meta-value" style="font-size: 11pt;">{{ $siswa->kelas->nama_kelas }}</div>
-                                </td>
-                            </tr>
-                        </table>
+                        <div class="meta-label">NIS / NISN</div>
+                        <div class="meta-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
                     </div>
 
                     <!-- 4. QR Code -->
