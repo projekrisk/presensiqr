@@ -26,9 +26,9 @@
    });
 
    Route::middleware('auth')->group(function () {
-        // Route Cetak PDF
-        Route::get('/cetak-kartu-zip', [CetakKartuController::class, 'cetak'])->name('cetak.kartu.zip');
+        // 1. Download Kartu Pelajar (ZIP)
+        Route::get('/cetak-kartu', [CetakKartuController::class, 'cetak'])->name('cetak.kartu');
         
-        // Route Download ZIP QR
-        Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
+        // 2. Download QR Only (ZIP)
+        Route::get('/download-qr', [DownloadQrController::class, 'download'])->name('download.qr');
     });
