@@ -7,12 +7,12 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage; // PENTING: Untuk fix path file
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Kelas;
 use App\Models\Siswa;
-use ZipArchive; // Import ZipArchive
+use ZipArchive;
 
 class ListSiswas extends ListRecords
 {
@@ -23,20 +23,20 @@ class ListSiswas extends ListRecords
         return [
             Actions\CreateAction::make(),
 
-            // --- 1. IMPORT DATA EXCEL ---
+            // --- TOMBOL IMPORT (Di Header Halaman) ---
             Actions\Action::make('import_excel')
                 ->label('Import Excel')
-                ->icon('heroicon-o-document-text')
-                ->color('success')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('warning')
                 ->form([
                     FileUpload::make('file_excel')
                         ->label('File Excel (.xlsx)')
-                        ->disk('local') 
+                        ->disk('local') // Simpan di storage/app/temp-import
                         ->directory('temp-import')
                         ->acceptedFileTypes(['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
                         ->required(),
                 ])
-                ->modalDescription('Format: Nama, JK, NISN, NIS, Kelas. NISN Wajib Unik.')
+                ->modalDescription('Pastikan format sesuai template. Jika NISN sudah ada, data akan diperbarui.')
                 ->extraModalFooterActions([
                     Actions\Action::make('download_template')
                         ->label('Download Template')
@@ -44,13 +44,16 @@ class ListSiswas extends ListRecords
                         ->color('gray'),
                 ])
                 ->action(function (array $data) {
+                    // PERBAIKAN PATH FILE: Gunakan Storage facade untuk mendapatkan path absolut yang valid
                     $filePath = Storage::disk('local')->path($data['file_excel']);
 
+                    // Validasi eksistensi file
                     if (!file_exists($filePath)) {
-                        Notification::make()->danger()->title('File tidak ditemukan')->send();
+                        Notification::make()->danger()->title('File tidak ditemukan di server')->send();
                         return;
                     }
 
+                    // Baca Excel
                     try {
                         $rows = Excel::toArray(new class implements \Maatwebsite\Excel\Concerns\ToArray {
                             public function array(array $array) { return $array; }
@@ -68,9 +71,10 @@ class ListSiswas extends ListRecords
                     $sheet1 = $rows[0];
                     $successCount = 0;
                     $sekolahId = Auth::user()->sekolah_id; 
+                    $missingClasses = []; // Array untuk menampung kelas yang hilang
 
                     foreach ($sheet1 as $index => $row) {
-                        if ($index === 0) continue; 
+                        if ($index === 0) continue; // Skip Header
 
                         $nama = $row[0] ?? null;
                         $jk = $row[1] ?? 'L';
@@ -80,19 +84,20 @@ class ListSiswas extends ListRecords
 
                         if (!$nama || !$nisn || !$namaKelas) continue;
 
+                        // Validasi Kelas
                         $kelas = Kelas::where('nama_kelas', $namaKelas)
                             ->where('sekolah_id', $sekolahId)
                             ->first();
 
                         if (!$kelas) {
-                            Notification::make()
-                                ->danger()
-                                ->title("Baris " . ($index+1) . " Gagal")
-                                ->body("Kelas '$namaKelas' tidak ditemukan.")
-                                ->send();
-                            continue;
+                            // Kumpulkan kelas yang tidak ditemukan (hindari duplikat di notif)
+                            if (!in_array($namaKelas, $missingClasses)) {
+                                $missingClasses[] = $namaKelas;
+                            }
+                            continue; // Skip baris ini
                         }
 
+                        // Simpan / Update
                         Siswa::updateOrCreate(
                             ['nisn' => $nisn, 'sekolah_id' => $sekolahId],
                             [
@@ -107,14 +112,26 @@ class ListSiswas extends ListRecords
                     }
 
                     if ($successCount > 0) {
-                        Notification::make()->success()->title("Berhasil import $successCount data siswa.")->send();
+                        Notification::make()->success()->title("Berhasil import $successCount siswa.")->send();
+                    }
+
+                    // Tampilkan notifikasi error hanya sekali (summary)
+                    if (!empty($missingClasses)) {
+                         Notification::make()
+                            ->danger()
+                            ->title('Gagal Mengimpor Beberapa Data')
+                            ->body('Kelas berikut tidak ditemukan di sistem: ' . implode(', ', $missingClasses) . '. Silakan buat kelas tersebut terlebih dahulu pada menu Data Kelas.')
+                            ->persistent() // Notifikasi tidak hilang otomatis agar user bisa baca
+                            ->send();
                     }
                     
+                    // Bersihkan file temp
                     @unlink($filePath);
                 }),
 
             // --- 2. IMPORT FOTO (ZIP) ---
-            Actions\Action::make('import_foto')
+            // ... (Kode Import Foto tetap sama seperti sebelumnya) ...
+             Actions\Action::make('import_foto')
                 ->label('Import Foto (ZIP)')
                 ->icon('heroicon-o-photo')
                 ->color('info')
@@ -136,48 +153,30 @@ class ListSiswas extends ListRecords
                     if ($zip->open($zipPath) === TRUE) {
                         for ($i = 0; $i < $zip->numFiles; $i++) {
                             $filename = $zip->getNameIndex($i);
-                            
-                            // Abaikan folder atau file hidden (macOS __MACOSX)
                             if (str_contains($filename, '/') || str_starts_with($filename, '.')) continue;
 
-                            // Ekstensi
                             $extension = pathinfo($filename, PATHINFO_EXTENSION);
                             if (!in_array(strtolower($extension), ['jpg', 'jpeg', 'png'])) continue;
 
-                            // Ambil NISN dari nama file (tanpa ekstensi)
                             $nisn = pathinfo($filename, PATHINFO_FILENAME);
 
-                            // Cari Siswa
                             $siswa = Siswa::where('nisn', $nisn)
                                 ->where('sekolah_id', $sekolahId)
                                 ->first();
 
                             if ($siswa) {
-                                // Baca konten file dari ZIP
                                 $stream = $zip->getFromIndex($i);
-                                
-                                // Generate nama unik baru untuk disimpan
                                 $newFilename = 'siswa-foto/' . $nisn . '_' . time() . '.' . $extension;
-                                
-                                // Simpan ke disk 'uploads' (public/uploads)
                                 Storage::disk('uploads')->put($newFilename, $stream);
-                                
-                                // Update database
                                 $siswa->update(['foto' => $newFilename]);
                                 $successCount++;
                             }
                         }
                         $zip->close();
-                        
-                        Notification::make()->success()
-                            ->title("Berhasil mengimpor $successCount foto siswa.")
-                            ->send();
+                        Notification::make()->success()->title("Berhasil mengimpor $successCount foto siswa.")->send();
                     } else {
-                        Notification::make()->danger()
-                            ->title('Gagal membuka file ZIP.')
-                            ->send();
+                        Notification::make()->danger()->title('Gagal membuka file ZIP.')->send();
                     }
-                    
                     @unlink($zipPath);
                 }),
         ];
