@@ -133,7 +133,7 @@ class SiswaResource extends Resource
                         })
                         ->deselectRecordsAfterCompletion(),
 
-                    // --- 2. DOWNLOAD QR ZIP (BARU) ---
+                    // --- 2. DOWNLOAD QR ZIP ---
                     Tables\Actions\BulkAction::make('download_qr')
                         ->label('Download QR (ZIP)')
                         ->icon('heroicon-o-archive-box-arrow-down')

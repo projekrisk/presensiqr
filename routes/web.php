@@ -4,6 +4,7 @@
    use App\Http\Controllers\RegisterSchoolController;
    use App\Http\Controllers\DownloadTemplateController;
    use App\Http\Controllers\CetakKartuController;
+   use App\Http\Controllers\DownloadQrController; 
 
    // Halaman Depan (Landing Page)
    Route::get('/', function () {
@@ -28,6 +29,6 @@
         // Route Cetak PDF
         Route::get('/cetak-kartu', [CetakKartuController::class, 'cetak'])->name('cetak.kartu');
         
-        // Route Download ZIP QR (Langkah 7)
+        // Route Download ZIP QR
         Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
     });
