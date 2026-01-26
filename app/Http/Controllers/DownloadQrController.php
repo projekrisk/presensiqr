@@ -55,14 +55,27 @@ class DownloadQrController extends Controller
                         $baseQr = $qrGenerator->generate($siswa->qr_code_data);
 
                         // B. Manipulasi Gambar: Tambah Kotak Putih + Logo
-                        $qrImage = imagecreatefromstring($baseQr);
+                        $sourceQr = imagecreatefromstring($baseQr);
                         $logoImage = imagecreatefromstring(file_get_contents($logoPath));
 
-                        if ($qrImage && $logoImage) {
-                            $qrWidth = imagesx($qrImage);
-                            $qrHeight = imagesy($qrImage);
+                        if ($sourceQr && $logoImage) {
+                            $qrWidth = imagesx($sourceQr);
+                            $qrHeight = imagesy($sourceQr);
                             $logoOriginalW = imagesx($logoImage);
                             $logoOriginalH = imagesy($logoImage);
+
+                            // --- PERBAIKAN WARNA (Fix Logo Pucat) ---
+                            // Buat kanvas baru TrueColor agar mendukung jutaan warna
+                            $qrImage = imagecreatetruecolor($qrWidth, $qrHeight);
+                            
+                            // Isi background putih
+                            $whiteBackground = imagecolorallocate($qrImage, 255, 255, 255);
+                            imagefill($qrImage, 0, 0, $whiteBackground);
+                            
+                            // Salin QR Code asli ke kanvas TrueColor
+                            imagecopy($qrImage, $sourceQr, 0, 0, 0, 0, $qrWidth, $qrHeight);
+                            imagedestroy($sourceQr); // Hapus resource lama
+                            // ----------------------------------------
 
                             // Hitung ukuran logo (30% dari QR)
                             $logoTargetW = $qrWidth * 0.30;
@@ -74,12 +87,11 @@ class DownloadQrController extends Controller
                             $centerY = ($qrHeight - $logoTargetH) / 2;
 
                             // Buat Kotak Putih (Background Logo)
-                            $whiteColor = imagecolorallocate($qrImage, 255, 255, 255);
                             imagefilledrectangle(
                                 $qrImage, 
                                 $centerX, $centerY, 
                                 $centerX + $logoTargetW, $centerY + $logoTargetH, 
-                                $whiteColor
+                                $whiteBackground
                             );
 
                             // Tempel Logo
@@ -101,7 +113,7 @@ class DownloadQrController extends Controller
                             imagedestroy($qrImage);
                             imagedestroy($logoImage);
                         } else {
-                            // Fallback jika gagal baca gambar: Timpa langsung (tanpa bg putih)
+                            // Fallback jika gagal baca gambar
                             $qrContent = $qrGenerator->merge($logoPath, 0.3, true)->generate($siswa->qr_code_data);
                         }
                     } catch (\Exception $e) {
