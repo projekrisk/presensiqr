@@ -4,6 +4,7 @@
    use App\Http\Controllers\RegisterSchoolController;
    use App\Http\Controllers\DownloadTemplateController;
    use App\Http\Controllers\DownloadQrController; 
+   use App\Http\Controllers\ExportJurnalController;
 
    // Halaman Depan (Landing Page)
    Route::get('/', function () {
@@ -27,4 +28,5 @@
    Route::middleware('auth')->group(function () {
         // Route Download ZIP QR
         Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
+        Route::get('/export-jurnal/{id}', [ExportJurnalController::class, 'export'])->name('export.jurnal');
     });

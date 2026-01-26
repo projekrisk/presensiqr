@@ -104,11 +104,28 @@ class JurnalGuruResource extends Resource
                 TextColumn::make('detail_count')
                      ->counts('detail')
                      ->label('Total Siswa'),
+                     
+                TextColumn::make('hadir')->label('Hadir')->color('success'),
+                TextColumn::make('sakit')->label('Sakit')->color('info'),
+                TextColumn::make('izin')->label('Izin')->color('warning'),
+                TextColumn::make('alpha')->label('Alpha')->color('danger'),
             ])
             ->defaultSort('created_at', 'desc')
-            ->filters([])
+            ->filters([
+                // ... filters ...
+            ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Lihat'),
+                
+                // --- TOMBOL EXPORT EXCEL ---
+                Tables\Actions\Action::make('export_excel')
+                    ->label('Excel')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->url(fn (JurnalGuru $record) => route('export.jurnal', $record->id))
+                    ->openUrlInNewTab(),
+                // ---------------------------
+
                 Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
