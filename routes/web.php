@@ -25,5 +25,9 @@
    });
 
    Route::middleware('auth')->group(function () {
+        // Route Cetak PDF
         Route::get('/cetak-kartu', [CetakKartuController::class, 'cetak'])->name('cetak.kartu');
+        
+        // Route Download ZIP QR (Langkah 7)
+        Route::get('/download-qr-zip', [DownloadQrController::class, 'download'])->name('download.qr.zip');
     });

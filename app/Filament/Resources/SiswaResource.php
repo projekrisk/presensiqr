@@ -122,17 +122,25 @@ class SiswaResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     
-                    // --- TAMBAHAN: CETAK KARTU ---
+                    // --- 1. CETAK KARTU PDF ---
                     Tables\Actions\BulkAction::make('cetak_kartu')
-                        ->label('Cetak Kartu ID')
+                        ->label('Cetak Kartu ID (PDF)')
                         ->icon('heroicon-o-printer')
                         ->color('success')
                         ->action(function ($records) {
-                            // Ambil semua ID yang dipilih
                             $ids = $records->pluck('id')->implode(',');
-                            
-                            // Redirect ke route cetak dengan membawa ID
                             return redirect()->route('cetak.kartu', ['ids' => $ids]);
+                        })
+                        ->deselectRecordsAfterCompletion(),
+
+                    // --- 2. DOWNLOAD QR ZIP (BARU) ---
+                    Tables\Actions\BulkAction::make('download_qr')
+                        ->label('Download QR (ZIP)')
+                        ->icon('heroicon-o-archive-box-arrow-down')
+                        ->color('warning')
+                        ->action(function ($records) {
+                            $ids = $records->pluck('id')->implode(',');
+                            return redirect()->route('download.qr.zip', ['ids' => $ids]);
                         })
                         ->deselectRecordsAfterCompletion()
                 ]),
