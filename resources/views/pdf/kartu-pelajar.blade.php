@@ -62,7 +62,7 @@
 
         .school-name {
             color: white;
-            font-size: 8pt;
+            font-size: 10pt; /* Diperbesar dari 8pt */
             font-weight: bold;
             text-transform: uppercase;
             line-height: 1.1;
@@ -137,11 +137,12 @@
             float: right;
             width: 40%;
             text-align: right;
+            padding-right: 2mm; /* Tambah padding kanan agar tidak nempel */
         }
 
         .qr-img {
-            width: 26mm; 
-            height: 26mm;
+            width: 24mm; /* Sedikit diperkecil agar pas */
+            height: 24mm;
         }
 
         /* Footer Strip */
