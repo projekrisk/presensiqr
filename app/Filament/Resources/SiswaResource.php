@@ -107,7 +107,6 @@ class SiswaResource extends Resource
                 ToggleColumn::make('status_aktif'),
             ])
             ->filters([])
-            // HEADER ACTIONS DIHAPUS DARI SINI KARENA SUDAH DI LISTSISWAS.PHP
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Action::make('qr_code')
@@ -122,18 +121,19 @@ class SiswaResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                     
-                    // --- 1. CETAK KARTU PDF ---
+                    // --- 1. CETAK KARTU PDF (Bulk Action) ---
                     Tables\Actions\BulkAction::make('cetak_kartu')
                         ->label('Cetak Kartu ID (PDF)')
                         ->icon('heroicon-o-printer')
                         ->color('success')
                         ->action(function ($records) {
                             $ids = $records->pluck('id')->implode(',');
+                            // Redirect ke route cetak untuk membuka PDF
                             return redirect()->route('cetak.kartu', ['ids' => $ids]);
                         })
                         ->deselectRecordsAfterCompletion(),
 
-                    // --- 2. DOWNLOAD QR ZIP ---
+                    // --- 2. DOWNLOAD QR ZIP (Bulk Action) ---
                     Tables\Actions\BulkAction::make('download_qr')
                         ->label('Download QR (ZIP)')
                         ->icon('heroicon-o-archive-box-arrow-down')
@@ -148,6 +148,7 @@ class SiswaResource extends Resource
     }
 
     public static function getRelations(): array { return []; }
+    
     public static function getPages(): array
     {
         return [

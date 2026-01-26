@@ -18,8 +18,8 @@
         }
 
         .card-container {
-            width: 85.6mm;
-            height: 54mm;
+            width: 54mm; /* Portrait Width */
+            height: 85.6mm; /* Portrait Height */
             background: white;
             border: 1px solid #e5e7eb;
             float: left;
@@ -33,36 +33,39 @@
 
         /* Header Biru */
         .card-header {
-            height: 13mm;
-            background: #2563EB; /* Biru Utama */
+            height: 15mm;
+            background: #2563EB;
             width: 100%;
             position: absolute;
             top: 0;
             left: 0;
+            text-align: center;
         }
 
-        /* Logo Tanpa Background Bulat */
+        /* Logo Sekolah (Tengah Atas) */
         .school-logo {
             position: absolute;
-            top: 1.5mm;
-            left: 3mm;
-            width: 10mm;
-            height: 10mm;
+            top: 2mm;
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontal - but DOMPDF has issues with transform, use margin */
+            margin-left: -6mm; /* Half of width */
+            width: 12mm;
+            height: 12mm;
             z-index: 10;
-            object-fit: contain; /* Agar logo utuh */
+            object-fit: contain;
         }
 
-        /* Container Nama Sekolah & NPSN */
+        /* Nama Sekolah & NPSN (Di bawah Header) */
         .header-text {
-            position: absolute;
-            top: 2mm;
-            left: 15mm; /* Jarak dari logo */
-            right: 2mm;
+            margin-top: 16mm;
+            text-align: center;
+            width: 100%;
+            padding: 0 2mm;
         }
 
         .school-name {
-            color: white;
-            font-size: 10pt; /* Diperbesar dari 8pt */
+            color: #1E40AF;
+            font-size: 8pt;
             font-weight: bold;
             text-transform: uppercase;
             line-height: 1.1;
@@ -72,27 +75,16 @@
         }
 
         .school-npsn {
-            color: #bfdbfe; /* Biru muda */
+            color: #6B7280;
             font-size: 6pt;
             margin-top: 1px;
         }
 
         /* Konten Utama */
         .content-area {
-            position: absolute;
-            top: 14mm; /* Di bawah header */
-            left: 0;
             width: 100%;
-            padding: 0 4mm;
-            box-sizing: border-box;
-        }
-
-        /* Baris 1: Nama Siswa (Full Width) */
-        .student-name-row {
-            width: 100%;
-            margin-bottom: 2mm;
-            border-bottom: 1px solid #f3f4f6;
-            padding-bottom: 1mm;
+            text-align: center;
+            margin-top: 4mm;
         }
 
         .student-name {
@@ -100,49 +92,35 @@
             font-weight: 800;
             color: #111827;
             text-transform: uppercase;
-            white-space: nowrap; /* Mencegah turun baris */
-            overflow: hidden; /* Potong jika kepanjangan */
-            text-overflow: ellipsis;
+            margin-bottom: 2mm;
+            padding: 0 2mm;
         }
 
-        /* Baris 2: Kolom Info & QR */
-        .details-row {
-            width: 100%;
-            height: 28mm;
-        }
-
-        /* Kolom Kiri: Detail */
-        .info-col {
-            float: left;
-            width: 55%;
-        }
-
-        .label {
+        .info-label {
             font-size: 6pt;
-            color: #6B7280;
+            color: #9CA3AF;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 0px;
         }
 
-        .value {
+        .info-value {
             font-size: 9pt;
             font-weight: bold;
             color: #374151;
             margin-bottom: 3mm;
         }
 
-        /* Kolom Kanan: QR Code */
-        .qr-col {
-            float: right;
-            width: 40%;
-            text-align: right;
-            padding-right: 2mm; /* Tambah padding kanan agar tidak nempel */
+        /* QR Code Besar di Bawah */
+        .qr-area {
+            width: 100%;
+            text-align: center;
+            position: absolute;
+            bottom: 6mm;
         }
 
         .qr-img {
-            width: 24mm; /* Sedikit diperkecil agar pas */
-            height: 24mm;
+            width: 32mm; /* Besar dan Jelas */
+            height: 32mm;
         }
 
         /* Footer Strip */
@@ -151,8 +129,8 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 1.5mm;
-            background: #F59E0B; /* Aksen Kuning/Orange */
+            height: 2mm;
+            background: #F59E0B;
         }
     </style>
 </head>
@@ -160,10 +138,10 @@
     <div class="page-container">
         @foreach($students as $siswa)
             <div class="card-container">
-                <!-- Header -->
+                <!-- Header Background -->
                 <div class="card-header"></div>
                 
-                <!-- Logo Sekolah -->
+                <!-- Logo Sekolah (Centered Manual via Margin) -->
                 @php
                     $logoPath = public_path('images/default-logo.png');
                     if($siswa->sekolah->logo) {
@@ -182,37 +160,26 @@
                     <img src="{{ $logoBase64 }}" class="school-logo">
                 @endif
                 
-                <!-- Nama & NPSN -->
+                <!-- Header Text -->
                 <div class="header-text">
-                    <div class="school-name">{{ Str::limit($siswa->sekolah->nama_sekolah, 35) }}</div>
+                    <div class="school-name">{{ Str::limit($siswa->sekolah->nama_sekolah, 25) }}</div>
                     <div class="school-npsn">NPSN: {{ $siswa->sekolah->npsn ?? '-' }}</div>
                 </div>
 
-                <!-- Konten -->
+                <!-- Konten Siswa -->
                 <div class="content-area">
+                    <div class="student-name">{{ Str::limit($siswa->nama_lengkap, 18) }}</div>
                     
-                    <!-- Baris 1: Nama Siswa Full -->
-                    <div class="student-name-row">
-                        <div class="student-name">{{ $siswa->nama_lengkap }}</div>
-                    </div>
+                    <div class="info-label">NIS / NISN</div>
+                    <div class="info-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
 
-                    <!-- Baris 2: Split Info & QR -->
-                    <div class="details-row">
-                        <!-- Kiri -->
-                        <div class="info-col">
-                            <div class="label">NIS / NISN</div>
-                            <div class="value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
+                    <div class="info-label">KELAS</div>
+                    <div class="info-value">{{ $siswa->kelas->nama_kelas }}</div>
+                </div>
 
-                            <div class="label">Kelas</div>
-                            <div class="value">{{ $siswa->kelas->nama_kelas }}</div>
-                        </div>
-
-                        <!-- Kanan -->
-                        <div class="qr-col">
-                            <!-- Generate QR -->
-                            <img src="data:image/png;base64, {{ base64_encode(SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(200)->margin(0)->generate($siswa->qr_code_data)) }}" class="qr-img">
-                        </div>
-                    </div>
+                <!-- QR Code -->
+                <div class="qr-area">
+                    <img src="data:image/png;base64, {{ base64_encode(SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(300)->margin(0)->generate($siswa->qr_code_data)) }}" class="qr-img">
                 </div>
 
                 <div class="footer-strip"></div>
