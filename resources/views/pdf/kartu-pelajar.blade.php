@@ -28,6 +28,7 @@
             border-radius: 8px; /* Sudut membulat */
             overflow: hidden;
             page-break-inside: avoid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         /* Background Dekorasi Atas (Biru Lengkung) */
@@ -166,7 +167,7 @@
                     <!-- 1. Logo Sekolah -->
                     <div class="logo-area">
                         @php
-                            $logoPath = public_path('images/default-logo.png');
+                            $logoPath = null;
                             if($siswa->sekolah->logo) {
                                 if(\Illuminate\Support\Facades\Storage::disk('uploads')->exists($siswa->sekolah->logo)) {
                                     $logoPath = \Illuminate\Support\Facades\Storage::disk('uploads')->path($siswa->sekolah->logo);
@@ -174,8 +175,13 @@
                                     $logoPath = public_path('uploads/'.$siswa->sekolah->logo);
                                 }
                             }
+                            // Default logo jika tidak ada
+                            if(!$logoPath && file_exists(public_path('images/default-logo.png'))) {
+                                $logoPath = public_path('images/default-logo.png');
+                            }
+
                             $logoBase64 = '';
-                            if(file_exists($logoPath)) {
+                            if($logoPath && file_exists($logoPath)) {
                                 $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
                             }
                         @endphp
@@ -199,9 +205,66 @@
                         <div class="meta-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
                     </div>
 
-                    <!-- 4. QR Code -->
+                    <!-- 4. QR Code dengan Logo di Tengah -->
                     <div class="qr-area">
-                        <img src="data:image/png;base64, {{ base64_encode(SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')->size(300)->margin(0)->generate($siswa->qr_code_data)) }}" class="qr-img">
+                        @php
+                            // Generate Basic QR (High Error Correction wajib)
+                            $qrRaw = SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                                        ->size(500)
+                                        ->margin(1)
+                                        ->errorCorrection('H')
+                                        ->generate($siswa->qr_code_data);
+                                        
+                            $qrFinalBase64 = base64_encode($qrRaw);
+
+                            // Jika Logo Sekolah Ada, kita manipulasi gambar
+                            if ($logoPath && function_exists('imagecreatefromstring')) {
+                                try {
+                                    $qrImage = imagecreatefromstring($qrRaw);
+                                    $logoImage = imagecreatefromstring(file_get_contents($logoPath));
+
+                                    if ($qrImage && $logoImage) {
+                                        $qrW = imagesx($qrImage);
+                                        $qrH = imagesy($qrImage);
+                                        $logoW = imagesx($logoImage);
+                                        $logoH = imagesy($logoImage);
+
+                                        // Buat Kanvas TrueColor (Fix warna pucat)
+                                        $finalImg = imagecreatetruecolor($qrW, $qrH);
+                                        $white = imagecolorallocate($finalImg, 255, 255, 255);
+                                        imagefill($finalImg, 0, 0, $white);
+                                        imagecopy($finalImg, $qrImage, 0, 0, 0, 0, $qrW, $qrH);
+
+                                        // Hitung ukuran logo (25% dari QR)
+                                        $logoTargetW = $qrW * 0.25;
+                                        $scale = $logoW / $logoTargetW;
+                                        $logoTargetH = $logoH / $scale;
+                                        
+                                        $centerX = ($qrW - $logoTargetW) / 2;
+                                        $centerY = ($qrH - $logoTargetH) / 2;
+
+                                        // Kotak Putih di Tengah
+                                        imagefilledrectangle($finalImg, $centerX, $centerY, $centerX + $logoTargetW, $centerY + $logoTargetH, $white);
+
+                                        // Tempel Logo
+                                        imagecopyresampled($finalImg, $logoImage, $centerX, $centerY, 0, 0, $logoTargetW, $logoTargetH, $logoW, $logoH);
+
+                                        // Output
+                                        ob_start();
+                                        imagepng($finalImg);
+                                        $qrFinalBase64 = base64_encode(ob_get_contents());
+                                        ob_end_clean();
+
+                                        imagedestroy($qrImage);
+                                        imagedestroy($logoImage);
+                                        imagedestroy($finalImg);
+                                    }
+                                } catch (\Exception $e) {
+                                    // Fallback ke QR biasa jika GD error
+                                }
+                            }
+                        @endphp
+                        <img src="data:image/png;base64, {{ $qrFinalBase64 }}" class="qr-img">
                     </div>
                     
                     <div class="card-footer">KARTU PRESENSI</div>
