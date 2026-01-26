@@ -40,24 +40,76 @@ class DownloadQrController extends Controller
                     }
                 }
 
-                // 2. Generate QR Code
+                $qrContent = null;
+
+                // 2. Setup Generator
                 $qrGenerator = QrCode::format('png')
                     ->size(500)
                     ->margin(1)
-                    ->errorCorrection('H'); // High Error Correction wajib untuk logo
+                    ->errorCorrection('H'); // High Error Correction wajib
 
-                if ($logoPath) {
-                    // Jika ada logo, merge di tengah (30% area)
+                // 3. Generate dengan Manipulasi Gambar (GD Library)
+                if ($logoPath && file_exists($logoPath)) {
                     try {
-                        $qrContent = $qrGenerator
-                            ->merge($logoPath, 0.3, true)
-                            ->generate($siswa->qr_code_data);
+                        // A. Generate QR Dasar
+                        $baseQr = $qrGenerator->generate($siswa->qr_code_data);
+
+                        // B. Manipulasi Gambar: Tambah Kotak Putih + Logo
+                        $qrImage = imagecreatefromstring($baseQr);
+                        $logoImage = imagecreatefromstring(file_get_contents($logoPath));
+
+                        if ($qrImage && $logoImage) {
+                            $qrWidth = imagesx($qrImage);
+                            $qrHeight = imagesy($qrImage);
+                            $logoOriginalW = imagesx($logoImage);
+                            $logoOriginalH = imagesy($logoImage);
+
+                            // Hitung ukuran logo (30% dari QR)
+                            $logoTargetW = $qrWidth * 0.30;
+                            $scale = $logoOriginalW / $logoTargetW;
+                            $logoTargetH = $logoOriginalH / $scale;
+
+                            // Posisi Tengah
+                            $centerX = ($qrWidth - $logoTargetW) / 2;
+                            $centerY = ($qrHeight - $logoTargetH) / 2;
+
+                            // Buat Kotak Putih (Background Logo)
+                            $whiteColor = imagecolorallocate($qrImage, 255, 255, 255);
+                            imagefilledrectangle(
+                                $qrImage, 
+                                $centerX, $centerY, 
+                                $centerX + $logoTargetW, $centerY + $logoTargetH, 
+                                $whiteColor
+                            );
+
+                            // Tempel Logo
+                            imagecopyresampled(
+                                $qrImage, $logoImage, 
+                                $centerX, $centerY, 
+                                0, 0, 
+                                $logoTargetW, $logoTargetH, 
+                                $logoOriginalW, $logoOriginalH
+                            );
+
+                            // Simpan hasil ke variable
+                            ob_start();
+                            imagepng($qrImage);
+                            $qrContent = ob_get_contents();
+                            ob_end_clean();
+
+                            // Bersihkan memori
+                            imagedestroy($qrImage);
+                            imagedestroy($logoImage);
+                        } else {
+                            // Fallback jika gagal baca gambar: Timpa langsung (tanpa bg putih)
+                            $qrContent = $qrGenerator->merge($logoPath, 0.3, true)->generate($siswa->qr_code_data);
+                        }
                     } catch (\Exception $e) {
-                        // Fallback jika format gambar logo bermasalah
+                        // Fallback ke QR Polos jika error
                         $qrContent = $qrGenerator->generate($siswa->qr_code_data);
                     }
                 } else {
-                    // QR Biasa
+                    // Tidak ada logo -> QR Polos
                     $qrContent = $qrGenerator->generate($siswa->qr_code_data);
                 }
 
