@@ -6,7 +6,7 @@
     <style>
         @page { 
             margin: 0; 
-            size: A4 portrait; /* Wajib Portrait */
+            size: A4 portrait;
         }
         body { 
             margin: 0; 
@@ -19,9 +19,9 @@
             width: 210mm;
             min-height: 297mm;
             background: white;
-            /* Padding disesuaikan agar muat 3x3 dengan margin kartu */
+            /* Padding dikurangi sedikit agar aman */
             padding-top: 10mm;
-            padding-left: 12mm; 
+            padding-left: 10mm; 
             padding-right: 10mm;
             box-sizing: border-box;
             overflow: hidden;
@@ -33,17 +33,19 @@
             background: #ffffff;
             border: 1px solid #d1d5db;
             float: left;
-            /* Jarak antar kartu */
-            margin-right: 5mm; 
-            margin-bottom: 5mm;
+            /* Margin diperkecil agar muat 3 kolom */
+            margin-right: 3mm; 
+            margin-bottom: 3mm;
             position: relative;
             border-radius: 8px;
             overflow: hidden;
             page-break-inside: avoid;
         }
         
-        /* Hilangkan margin kanan untuk kartu ke-3, ke-6, dst di setiap baris (opsional, tapi float biasanya handle ini) */
-        /* .card-container:nth-child(3n) { margin-right: 0; } */
+        /* Hapus margin kanan untuk setiap kartu ke-3 (kartu terakhir di baris) */
+        .card-container:nth-child(3n) {
+            margin-right: 0;
+        }
 
         /* Header Biru */
         .card-header {
@@ -155,8 +157,6 @@
             page-break-after: always;
             clear: both;
             display: block;
-            height: 0;
-            visibility: hidden;
         }
     </style>
 </head>
@@ -194,7 +194,7 @@
 
                 <!-- Konten Siswa -->
                 <div class="content-area">
-                    <div class="student-name">{{ $siswa->nama_lengkap }}</div>
+                    <div class="student-name">{{ Str::limit($siswa->nama_lengkap, 18) }}</div>
                     
                     <div class="info-label">NIS / NISN</div>
                     <div class="info-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
