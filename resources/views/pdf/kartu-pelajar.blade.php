@@ -11,38 +11,35 @@
         body { 
             margin: 0; 
             font-family: 'Helvetica', sans-serif; 
-            background: #e5e7eb; 
-            -webkit-print-color-adjust: exact; 
+            background: #ffffff;
         }
         
-        .page-container {
+        .page-wrapper {
             width: 210mm;
             min-height: 297mm;
-            background: white;
-            /* Padding dikurangi sedikit agar aman */
+            /* Padding diatur agar muat 3 kartu ke samping dan 3 ke bawah */
             padding-top: 10mm;
-            padding-left: 10mm; 
-            padding-right: 10mm;
+            padding-left: 12mm; 
+            padding-right: 5mm; 
             box-sizing: border-box;
-            overflow: hidden;
+            position: relative;
         }
 
         .card-container {
             width: 54mm; 
             height: 85.6mm; 
             background: #ffffff;
-            border: 1px solid #d1d5db;
+            border: 1px solid #9CA3AF; /* Border abu-abu tipis untuk panduan potong */
             float: left;
-            /* Margin diperkecil agar muat 3 kolom */
-            margin-right: 3mm; 
-            margin-bottom: 3mm;
+            /* Jarak antar kartu */
+            margin-right: 5mm; 
+            margin-bottom: 5mm;
             position: relative;
             border-radius: 8px;
             overflow: hidden;
-            page-break-inside: avoid;
         }
         
-        /* Hapus margin kanan untuk setiap kartu ke-3 (kartu terakhir di baris) */
+        /* Hapus margin kanan pada kartu ke-3 di setiap baris agar tidak turun */
         .card-container:nth-child(3n) {
             margin-right: 0;
         }
@@ -63,8 +60,7 @@
             position: absolute;
             top: 2mm;
             left: 50%;
-            transform: translateX(-50%);
-            margin-left: -6mm; 
+            margin-left: -6mm; /* Tengah manual: -1/2 lebar */
             width: 12mm;
             height: 12mm;
             z-index: 10;
@@ -134,12 +130,12 @@
             width: 100%;
             text-align: center;
             position: absolute;
-            bottom: 6mm;
+            bottom: 6mm; /* Jarak dari bawah */
         }
 
         .qr-img {
-            width: 32mm;
-            height: 32mm;
+            width: 30mm;
+            height: 30mm;
         }
 
         /* Footer Strip */
@@ -152,16 +148,21 @@
             background: #F59E0B;
         }
 
-        /* Pemisah Halaman */
+        /* Pemisah Halaman untuk Cetak */
         .page-break {
             page-break-after: always;
             clear: both;
             display: block;
+            height: 1px;
+        }
+        
+        .clearfix {
+            clear: both;
         }
     </style>
 </head>
 <body>
-    <div class="page-container">
+    <div class="page-wrapper">
         @foreach($students as $index => $siswa)
             <div class="card-container">
                 <!-- Header Background -->
@@ -198,14 +199,11 @@
                     
                     <div class="info-label">NIS / NISN</div>
                     <div class="info-value">{{ $siswa->nis ?? '-' }} / {{ $siswa->nisn }}</div>
-
-                    <!-- KELAS DIHAPUS SESUAI REQUEST SEBELUMNYA -->
                 </div>
 
                 <!-- QR Code (Dengan Logo Tengah) -->
                 <div class="qr-area">
                     @php
-                        // Logika QR dengan Logo Tengah (Sama seperti DownloadQrController)
                         $qrRaw = SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
                                     ->size(300)
                                     ->margin(0)
@@ -223,13 +221,11 @@
                                     $qrW = imagesx($qrImage); $qrH = imagesy($qrImage);
                                     $logoW = imagesx($logoImage); $logoH = imagesy($logoImage);
 
-                                    // TrueColor Canvas
                                     $finalImg = imagecreatetruecolor($qrW, $qrH);
                                     $white = imagecolorallocate($finalImg, 255, 255, 255);
                                     imagefill($finalImg, 0, 0, $white);
                                     imagecopy($finalImg, $qrImage, 0, 0, 0, 0, $qrW, $qrH);
 
-                                    // Logo 25%
                                     $logoTargetW = $qrW * 0.25;
                                     $scale = $logoW / $logoTargetW;
                                     $logoTargetH = $logoH / $scale;
@@ -253,12 +249,16 @@
                 <div class="footer-strip"></div>
             </div>
 
-            {{-- Logic Page Break setiap 9 kartu --}}
+            {{-- Logic Page Break setiap 9 kartu (3x3) --}}
             @if (($index + 1) % 9 == 0 && ($index + 1) < count($students))
                 <div class="page-break"></div>
+                <!-- Buka container baru setelah break -->
+                </div><div class="page-wrapper">
             @endif
 
         @endforeach
+        
+        <div class="clearfix"></div>
     </div>
 </body>
 </html>
