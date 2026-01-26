@@ -3,7 +3,8 @@
    use Illuminate\Support\Facades\Route;
    use App\Http\Controllers\RegisterSchoolController;
    use App\Http\Controllers\DownloadTemplateController;
-   
+   use App\Http\Controllers\CetakKartuController;
+
    // Halaman Depan (Landing Page)
    Route::get('/', function () {
        return view('welcome');
@@ -22,3 +23,7 @@
        \Illuminate\Support\Facades\Artisan::call('migrate --force');
        return 'Migrasi Selesai';
    });
+
+   Route::middleware('auth')->group(function () {
+        Route::get('/cetak-kartu', [CetakKartuController::class, 'cetak'])->name('cetak.kartu');
+    });

@@ -121,6 +121,20 @@ class SiswaResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    
+                    // --- TAMBAHAN: CETAK KARTU ---
+                    Tables\Actions\BulkAction::make('cetak_kartu')
+                        ->label('Cetak Kartu ID')
+                        ->icon('heroicon-o-printer')
+                        ->color('success')
+                        ->action(function ($records) {
+                            // Ambil semua ID yang dipilih
+                            $ids = $records->pluck('id')->implode(',');
+                            
+                            // Redirect ke route cetak dengan membawa ID
+                            return redirect()->route('cetak.kartu', ['ids' => $ids]);
+                        })
+                        ->deselectRecordsAfterCompletion()
                 ]),
             ]);
     }
