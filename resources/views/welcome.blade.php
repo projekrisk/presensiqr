@@ -3,14 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SIPQR - Future of Attendance</title>
+    <title>Skanara</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -57,7 +55,6 @@
 </head>
 <body class="antialiased bg-dark text-white font-sans overflow-x-hidden selection:bg-cyan-500 selection:text-white">
 
-    <!-- ALERTS -->
     @if(session('success'))
     <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-lg px-4">
         <div class="bg-green-500/10 border border-green-500/50 text-green-400 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center justify-between">
@@ -91,16 +88,13 @@
     </div>
     @endif
 
-    <!-- BACKGROUND ELEMENTS -->
     <div class="fixed inset-0 z-0 bg-grid"></div>
     <div class="fixed top-0 left-1/4 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob"></div>
     <div class="fixed top-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-2000"></div>
     <div class="fixed -bottom-32 left-1/3 w-96 h-96 bg-purple-600 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 animate-blob animation-delay-4000"></div>
 
-    <!-- MAIN CONTAINER -->
     <div class="relative z-10 flex flex-col min-h-screen">
         
-        <!-- NAVBAR -->
         <nav class="w-full pt-6 px-4 flex justify-center">
             <div class="bg-glass backdrop-blur-md border border-white/10 rounded-full px-6 py-3 flex items-center justify-between w-full max-w-5xl shadow-2xl">
                 <div class="flex items-center gap-2">
@@ -109,15 +103,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                         </svg>
                     </div>
-                    <span class="font-bold text-xl tracking-wide">SIP<span class="text-cyan-400">QR</span></span>
+                    <span class="font-bold text-xl tracking-wide">Skan<span class="text-cyan-400">ara</span></span>
                 </div>
                 <a href="/admin/login" class="text-sm font-semibold text-gray-300 hover:text-white transition">
-                    Login Admin →
+                    Login →
                 </a>
             </div>
         </nav>
 
-        <!-- HERO CONTENT -->
         <main class="flex-grow flex items-center justify-center px-4 py-10 relative">
             <div class="max-w-4xl mx-auto text-center relative">
                 
@@ -134,8 +127,8 @@
                 </h1>
 
                 <p class="text-lg md:text-xl text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                    Tinggalkan kertas dan manual. Beralih ke ekosistem presensi digital berbasis 
-                    <span class="text-white font-semibold">AI & QR Code</span>. 
+                    Beralih ke ekosistem presensi digital berbasis 
+                    <span class="text-white font-semibold">Digital</span>. 
                     Real-time, transparan, dan terintegrasi penuh.
                 </p>
 
@@ -143,7 +136,7 @@
                     <a href="/admin/login" class="group relative px-8 py-4 bg-blue-600 rounded-2xl font-bold text-white overflow-hidden transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(37,99,235,0.5)]">
                         <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                         <span class="flex items-center gap-3">
-                            Akses Dashboard
+                            Dashboard
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
@@ -151,7 +144,7 @@
                     </a>
 
                     <button onclick="toggleModal('registerModal')" class="group px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/30 transition-all backdrop-blur-sm flex items-center gap-2">
-                        <span>Daftarkan Sekolah</span>
+                        <span>Daftar</span>
                         <div class="w-2 h-2 rounded-full bg-green-500 group-hover:animate-ping"></div>
                     </button>
                 </div>
@@ -167,7 +160,7 @@
         </main>
 
         <footer class="py-6 text-center text-gray-600 text-xs font-medium relative z-10 border-t border-white/5">
-            <p>&copy; {{ date('Y') }} SIPQR SYSTEM. ENGINEERED FOR EDUCATION.</p>
+            <p>&copy; {{ date('Y') }} SKANARA SYSTEM. ENGINEERED FOR EDUCATION.</p>
         </footer>
     </div>
 

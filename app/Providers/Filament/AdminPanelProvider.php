@@ -29,7 +29,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             
             // --- BRANDING ---
-            ->brandName('SIPQR Admin')
+            ->brandName('Skanara Admin')
             ->favicon(asset('favicon.png'))
             ->brandLogo(asset('favicon.png'))
             ->brandLogoHeight('3rem')
